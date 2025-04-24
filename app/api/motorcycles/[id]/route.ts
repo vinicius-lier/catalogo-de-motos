@@ -6,14 +6,14 @@ import { validateAndProcessImage } from '@/app/utils/imageValidation'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Usar transaction para garantir consistência
     const result = await prisma.$transaction(async (tx) => {
       // Buscar moto com imagens
       const motorcycle = await tx.motorcycle.findUnique({
-        where: { id: params.id },
+        where: { id: context.params.id },
         include: { images: true }
       })
 
@@ -23,7 +23,7 @@ export async function DELETE(
 
       // Deletar do banco (cascade delete irá remover imagens e cores)
       await tx.motorcycle.delete({
-        where: { id: params.id }
+        where: { id: context.params.id }
       })
 
       return motorcycle
@@ -59,14 +59,14 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const formData = await request.formData()
     const isSold = formData.get('isSold') === 'true'
 
     const motorcycle = await prisma.motorcycle.update({
-      where: { id: params.id },
+      where: { id: context.params.id },
       data: { isSold },
       include: {
         images: true,
@@ -86,7 +86,7 @@ export async function PATCH(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const formData = await request.formData()
@@ -161,7 +161,7 @@ export async function PUT(
     const motorcycle = await prisma.$transaction(async (tx) => {
       // Atualizar moto
       const moto = await tx.motorcycle.update({
-        where: { id: params.id },
+        where: { id: context.params.id },
         data: {
           name,
           description,
