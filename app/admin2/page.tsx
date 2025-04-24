@@ -61,9 +61,7 @@ export default function Admin2Page() {
       setLoading(true)
       setError(null)
       
-      // Usar URL base correta
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
-      const response = await fetch(`${baseUrl}/api/motorcycles?page=${page}`)
+      const response = await fetch(`/api/motorcycles?page=${page}`)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
@@ -71,13 +69,17 @@ export default function Admin2Page() {
       }
       
       const data = await response.json()
+      console.log('Resposta da API:', data)
       
       // Verificar se a resposta tem o formato esperado
-      if (!data || !Array.isArray(data.motorcycles)) {
+      if (!data || typeof data !== 'object') {
         throw new Error('Formato de resposta inválido')
       }
+
+      // Garantir que temos um array de motocicletas
+      const motorcyclesList = Array.isArray(data.motorcycles) ? data.motorcycles : []
       
-      setMotorcycles(data.motorcycles)
+      setMotorcycles(motorcyclesList)
       setTotalPages(data.totalPages || 1)
       setError(null)
     } catch (err: any) {

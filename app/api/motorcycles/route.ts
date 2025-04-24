@@ -20,6 +20,8 @@ export async function GET(request: Request) {
     const limit = 10
     const skip = (page - 1) * limit
 
+    console.log('=== Buscando motos ===', { page, limit, skip })
+
     const [motorcycles, total] = await Promise.all([
       prisma.motorcycle.findMany({
         include: {
@@ -33,20 +35,30 @@ export async function GET(request: Request) {
         skip: skip
       }),
       prisma.motorcycle.count()
-    ])
-
-    return NextResponse.json({
-      motorcycles,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
+    ]).catch(error => {
+      console.error('Erro ao buscar do banco:', error)
+      return [[], 0]
     })
+
+    const totalPages = Math.ceil(total / limit)
+    const response = {
+      motorcycles: motorcycles || [],
+      totalPages: totalPages || 1,
+      currentPage: page,
+      total: total || 0
+    }
+
+    console.log('=== Resposta da API ===', response)
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Erro ao buscar motos:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar motos' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      motorcycles: [],
+      totalPages: 1,
+      currentPage: 1,
+      total: 0,
+      error: 'Erro ao buscar motos'
+    })
   }
 }
 
