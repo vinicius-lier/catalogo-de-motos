@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateAndProcessImage } from '@/app/utils/imageValidation'
 
+interface Color {
+  name: string;
+  hex: string;
+}
+
+interface ImageResult {
+  success: boolean;
+  error?: string;
+  url?: string;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -41,20 +52,32 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    console.log('Iniciando processamento da requisição POST')
+    console.log('=== Iniciando processamento da requisição POST ===')
     
     // Log do request
-    console.log('Request headers:', Object.fromEntries(request.headers))
-    console.log('Request method:', request.method)
-
-    const formData = await request.formData().catch(e => {
-      console.error('Erro ao ler FormData:', e)
-      return null
+    const headers = Object.fromEntries(request.headers)
+    console.log('Request headers:', {
+      'content-type': headers['content-type'],
+      'content-length': headers['content-length']
     })
 
-    if (!formData) {
+    // Verificar content-type
+    if (!headers['content-type']?.includes('multipart/form-data')) {
+      console.error('Content-type inválido:', headers['content-type'])
       return NextResponse.json(
-        { error: 'Dados do formulário inválidos' },
+        { error: 'Content-type deve ser multipart/form-data' },
+        { status: 400 }
+      )
+    }
+
+    // Ler FormData
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch (error: any) {
+      console.error('Erro ao ler FormData:', error)
+      return NextResponse.json(
+        { error: 'Erro ao ler dados do formulário' },
         { status: 400 }
       )
     }
@@ -66,18 +89,18 @@ export async function POST(request: Request) {
       }
       return `${key}: ${value}`
     })
-    console.log('Campos recebidos:', formFields)
+    console.log('=== Campos recebidos ===', formFields)
 
-    // Validar dados obrigatórios
+    // Extrair e validar campos
     const name = formData.get('name')?.toString().trim()
     const description = formData.get('description')?.toString().trim()
-    const price = formData.get('price')
+    const price = formData.get('price')?.toString()
     const isSold = formData.get('isSold') === 'true'
-    const colorsJson = formData.get('colors')
+    const colorsJson = formData.get('colors')?.toString()
     const images = formData.getAll('images')
 
-    // Log dos dados processados
-    console.log('Dados processados:', {
+    // Log dos dados extraídos
+    console.log('=== Dados extraídos ===', {
       name,
       description,
       price,
@@ -86,61 +109,65 @@ export async function POST(request: Request) {
       imagesCount: images.length
     })
 
-    // Validações
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Nome é obrigatório' },
-        { status: 400 }
-      )
-    }
-
-    if (!description) {
-      return NextResponse.json(
-        { error: 'Descrição é obrigatória' },
-        { status: 400 }
-      )
-    }
-
+    // Validações detalhadas
+    const errors = []
+    if (!name) errors.push('Nome é obrigatório')
+    if (!description) errors.push('Descrição é obrigatória')
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-      return NextResponse.json(
-        { error: 'Preço deve ser um número válido maior que zero' },
-        { status: 400 }
-      )
+      errors.push('Preço deve ser um número válido maior que zero')
     }
-
-    if (!images.length) {
-      return NextResponse.json(
-        { error: 'Pelo menos uma imagem é necessária' },
-        { status: 400 }
-      )
-    }
-
-    let colors = []
+    if (!images.length) errors.push('Pelo menos uma imagem é necessária')
+    
+    // Validar cores
+    let colors: Color[] = []
     try {
-      colors = colorsJson ? JSON.parse(colorsJson.toString()) : []
-      if (!Array.isArray(colors) || colors.length === 0) {
+      if (!colorsJson) throw new Error('Cores não fornecidas')
+      const parsedColors = JSON.parse(colorsJson)
+      if (!Array.isArray(parsedColors) || parsedColors.length === 0) {
         throw new Error('Array de cores vazio ou inválido')
       }
-    } catch (e) {
-      console.error('Erro ao processar cores:', e)
+      parsedColors.forEach((color: any) => {
+        if (!color.name || !color.hex) {
+          throw new Error('Cor com dados incompletos')
+        }
+      })
+      colors = parsedColors
+    } catch (error: any) {
+      errors.push(`Erro nas cores: ${error.message}`)
+    }
+
+    if (errors.length > 0) {
+      console.error('Erros de validação:', errors)
       return NextResponse.json(
-        { error: 'Formato de cores inválido' },
+        { error: errors.join(', ') },
         { status: 400 }
       )
     }
 
     // Processar imagens
-    console.log('Iniciando processamento das imagens')
+    console.log('=== Iniciando processamento das imagens ===')
     const imageResults = await Promise.all(
       images.map(async (file, index) => {
         try {
-          console.log(`Processando imagem ${index + 1}:`, file instanceof File ? file.name : 'Não é um arquivo')
-          const result = await validateAndProcessImage(file as File)
+          if (!(file instanceof File)) {
+            throw new Error('Dado recebido não é um arquivo')
+          }
+          
+          console.log(`Processando imagem ${index + 1}:`, {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          })
+          
+          const result = await validateAndProcessImage(file)
           console.log(`Resultado do processamento da imagem ${index + 1}:`, result)
-          return result
-        } catch (error) {
+          return result as ImageResult
+        } catch (error: any) {
           console.error(`Erro ao processar imagem ${index + 1}:`, error)
-          return { success: false, error: 'Erro ao processar imagem' }
+          return { 
+            success: false, 
+            error: error.message || 'Erro ao processar imagem' 
+          } as ImageResult
         }
       })
     )
@@ -149,13 +176,13 @@ export async function POST(request: Request) {
     if (failedImages.length > 0) {
       console.error('Falha no processamento das imagens:', failedImages)
       return NextResponse.json(
-        { error: 'Erro ao processar uma ou mais imagens' },
+        { error: 'Erro ao processar uma ou mais imagens: ' + failedImages.map(img => img.error).join(', ') },
         { status: 400 }
       )
     }
 
     // Criar moto no banco
-    console.log('Iniciando criação no banco de dados')
+    console.log('=== Iniciando criação no banco de dados ===')
     const motorcycle = await prisma.$transaction(async (tx) => {
       try {
         // Criar moto
@@ -204,13 +231,17 @@ export async function POST(request: Request) {
     })
 
     if (!motorcycle) {
-      throw new Error('Erro ao criar motocicleta')
+      throw new Error('Erro ao criar motocicleta no banco de dados')
     }
 
-    console.log('Moto criada com sucesso:', motorcycle)
+    console.log('=== Moto criada com sucesso ===', motorcycle)
     return NextResponse.json(motorcycle)
   } catch (error) {
-    console.error('Erro detalhado ao criar motocicleta:', error)
+    console.error('=== Erro detalhado ao criar motocicleta ===', {
+      message: error.message,
+      stack: error.stack,
+      error
+    })
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao criar motocicleta' },
       { status: 500 }

@@ -128,6 +128,17 @@ export default function Admin2Page() {
       setSubmitting(true)
       setError(null)
       
+      // Log do estado inicial
+      console.log('Estado inicial do formulário:', {
+        formData,
+        selectedImages: selectedImages ? {
+          length: selectedImages.length,
+          types: Array.from(selectedImages).map(f => f.type),
+          sizes: Array.from(selectedImages).map(f => f.size)
+        } : null,
+        colors
+      })
+
       // Validações
       if (!formData.name.trim()) {
         throw new Error('Nome é obrigatório')
@@ -146,52 +157,80 @@ export default function Admin2Page() {
         throw new Error('Adicione pelo menos uma cor')
       }
 
+      // Criar FormData
       const formDataToSend = new FormData()
-      formDataToSend.append('name', formData.name)
-      formDataToSend.append('description', formData.description)
-      formDataToSend.append('price', formData.price)
-      formDataToSend.append('isSold', formData.isSold.toString())
-      formDataToSend.append('colors', JSON.stringify(colors))
-
-      Array.from(selectedImages).forEach((image) => {
-        formDataToSend.append('images', image)
-      })
-
-      // Log do FormData antes do envio
-      console.log('Conteúdo do FormData antes do envio:', {
-        name: formDataToSend.get('name'),
-        description: formDataToSend.get('description'),
-        price: formDataToSend.get('price'),
-        isSold: formDataToSend.get('isSold'),
-        colors: formDataToSend.get('colors'),
-        imagesCount: selectedImages?.length
-      })
-
-      // Usar URL base correta
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
-      console.log('Enviando requisição para:', `${baseUrl}/api/motorcycles`)
       
-      const response = await fetch(`${baseUrl}/api/motorcycles`, {
+      try {
+        formDataToSend.append('name', formData.name.trim())
+        formDataToSend.append('description', formData.description.trim())
+        formDataToSend.append('price', formData.price.toString())
+        formDataToSend.append('isSold', formData.isSold.toString())
+        formDataToSend.append('colors', JSON.stringify(colors))
+
+        // Log do FormData antes de adicionar imagens
+        console.log('FormData antes das imagens:', {
+          name: formDataToSend.get('name'),
+          description: formDataToSend.get('description'),
+          price: formDataToSend.get('price'),
+          isSold: formDataToSend.get('isSold'),
+          colors: formDataToSend.get('colors')
+        })
+
+        // Adicionar imagens
+        if (selectedImages) {
+          Array.from(selectedImages).forEach((image, index) => {
+            try {
+              formDataToSend.append('images', image)
+              console.log(`Imagem ${index + 1} adicionada:`, {
+                name: image.name,
+                type: image.type,
+                size: image.size
+              })
+            } catch (err) {
+              console.error(`Erro ao adicionar imagem ${index + 1}:`, err)
+              throw new Error(`Erro ao processar imagem ${image.name}`)
+            }
+          })
+        }
+
+        // Log final do FormData
+        console.log('FormData completo:', Array.from(formDataToSend.entries()))
+      } catch (err) {
+        console.error('Erro ao montar FormData:', err)
+        throw new Error('Erro ao preparar dados do formulário')
+      }
+
+      // Enviar requisição
+      console.log('Iniciando envio da requisição...')
+      const response = await fetch('/api/motorcycles', {
         method: 'POST',
         body: formDataToSend,
+      }).catch(err => {
+        console.error('Erro na requisição fetch:', err)
+        throw new Error('Erro de conexão ao tentar salvar')
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(e => {
           console.error('Erro ao parsear resposta de erro:', e)
-          return { error: 'Erro ao ler resposta de erro' }
+          return { error: 'Erro desconhecido' }
         })
-        console.error('Detalhes completos do erro:', {
+        
+        console.error('Detalhes do erro da API:', {
           status: response.status,
           statusText: response.statusText,
-          url: response.url,
           headers: Object.fromEntries(response.headers.entries()),
           errorData
         })
+        
         throw new Error(errorData.error || `Erro ao salvar motocicleta: ${response.status} ${response.statusText}`)
       }
 
-      const responseData = await response.json()
+      const responseData = await response.json().catch(e => {
+        console.error('Erro ao parsear resposta de sucesso:', e)
+        throw new Error('Erro ao processar resposta do servidor')
+      })
+
       console.log('Resposta de sucesso:', responseData)
 
       // Limpar formulário
@@ -212,7 +251,11 @@ export default function Admin2Page() {
       // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      console.error('Erro ao salvar moto:', err)
+      console.error('Erro detalhado ao salvar moto:', {
+        message: err.message,
+        stack: err.stack,
+        error: err
+      })
       setError(err.message || 'Erro ao salvar motocicleta')
     } finally {
       setSubmitting(false)
