@@ -25,6 +25,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
   }
 
   const imageUrl = motorcycle.images[0]?.url || '/placeholder.jpg'
+  const isDataUrl = imageUrl.startsWith('data:')
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -55,7 +56,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
             fill
             className="object-cover"
             onError={handleImageError}
-            unoptimized={imageUrl.startsWith('data:')}
+            unoptimized={isDataUrl}
           />
         </div>
         {motorcycle.isSold && (

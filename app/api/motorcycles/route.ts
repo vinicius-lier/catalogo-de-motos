@@ -11,8 +11,9 @@ interface Color {
 }
 
 interface ImageResult {
-  url: string;
-  publicId: string;
+  success: boolean;
+  error?: string;
+  url?: string;
 }
 
 interface ApiResponse {
@@ -278,79 +279,96 @@ export async function POST(request: NextRequest) {
             tamanho: image instanceof File ? `${(image.size / (1024 * 1024)).toFixed(2)}MB` : 'N/A'
           })
           
-          const result = await processImage(image)
-          console.log(`Imagem ${index + 1} processada com sucesso:`, {
-            url: result.url,
-            publicId: result.publicId
-          })
-          return result
+          return await processImage(image)
         })
       )
+
+      // Verificar se alguma imagem falhou no processamento
+      const failedImages = processedImages.filter(img => !img.success)
+      if (failedImages.length > 0) {
+        console.error('Falha ao processar algumas imagens:', failedImages)
+        return NextResponse.json(
+          { error: 'Erro ao processar imagens: ' + failedImages.map(img => img.error).join(', ') },
+          { status: 400 }
+        )
+      }
+
+      const successfulImages = processedImages.filter((img): img is ImageResult & { success: true, url: string } => img.success && !!img.url)
+      
+      if (successfulImages.length === 0) {
+        console.error('Nenhuma imagem foi processada com sucesso')
+        return NextResponse.json(
+          { error: 'Nenhuma imagem foi processada com sucesso' },
+          { status: 400 }
+        )
+      }
       
       console.log('=== Todas as imagens processadas com sucesso ===', {
-        quantidade: processedImages.length,
-        urls: processedImages.map(img => img.url),
-        publicIds: processedImages.map(img => img.publicId)
+        quantidade: successfulImages.length,
+        urls: successfulImages.map(img => img.url)
       })
+
+      // Criar moto no banco de dados
+      console.log('=== Iniciando criação no banco de dados ===')
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          console.log('Criando registro da moto...')
+          const motorcycle = await tx.motorcycle.create({
+            data: {
+              name,
+              description,
+              price: Number(price),
+              isSold,
+              colors: {
+                create: colors.map(color => ({
+                  name: color.name,
+                  hex: color.hex
+                }))
+              },
+              images: {
+                create: successfulImages.map((img) => ({
+                  url: img.url
+                }))
+              }
+            },
+            include: {
+              colors: true,
+              images: true
+            }
+          })
+          console.log('Moto criada com sucesso:', motorcycle)
+
+          return {
+            motorcycle,
+            colors: motorcycle.colors,
+            images: motorcycle.images,
+          }
+        })
+
+        console.log('=== Operação concluída com sucesso ===', result)
+        return NextResponse.json({
+          data: {
+            message: 'Motocicleta criada com sucesso',
+            motorcycle: result.motorcycle
+          }
+        } as ApiResponse)
+      } catch (error: any) {
+        console.error('Erro na operação do banco de dados:', {
+          mensagem: error.message,
+          codigo: error.code,
+          stack: error.stack
+        })
+        throw error
+      }
     } catch (error: any) {
       console.error('Erro ao processar imagens:', {
         mensagem: error.message,
         stack: error.stack
       })
-      throw error
-    }
-
-    // Criar moto no banco de dados
-    console.log('=== Iniciando criação no banco de dados ===')
-    try {
-      const result = await prisma.$transaction(async (tx) => {
-        console.log('Criando registro da moto...')
-        const motorcycle = await tx.motorcycle.create({
-          data: {
-            name,
-            description,
-            price: Number(price),
-            isSold,
-            colors: {
-              create: colors.map(color => ({
-                name: color.name,
-                hex: color.hex
-              }))
-            },
-            images: {
-              create: processedImages.map((img) => ({
-                url: img.url
-              }))
-            }
-          },
-          include: {
-            colors: true,
-            images: true
-          }
-        })
-        console.log('Moto criada com sucesso:', motorcycle)
-
-        return {
-          motorcycle,
-          colors: motorcycle.colors,
-          images: motorcycle.images,
-        }
-      })
-
-      console.log('=== Operação concluída com sucesso ===', result)
-      return NextResponse.json({
-        data: {
-          message: 'Motocicleta criada com sucesso',
-          motorcycle: result.motorcycle
-        }
-      } as ApiResponse)
-    } catch (error: any) {
-      console.error('Erro na operação do banco de dados:', {
-        mensagem: error.message,
-        codigo: error.code,
-        stack: error.stack
-      })
-      throw error
+      return NextResponse.json(
+        { error: 'Erro ao processar imagens: ' + error.message },
+        { status: 500 }
+      )
     }
   } catch (error: any) {
     console.error('Erro geral na rota POST:', error)
@@ -363,23 +381,20 @@ export async function POST(request: NextRequest) {
 
 async function processImage(file: FormDataEntryValue): Promise<ImageResult> {
   if (!(file instanceof File)) {
-    throw new Error('Dado recebido não é um arquivo')
+    return {
+      success: false,
+      error: 'Dado recebido não é um arquivo'
+    }
   }
 
   try {
     const result = await validateAndProcessImage(file)
-    
-    if (!result.success || !result.url) {
-      console.error('Erro ao processar imagem:', result.error)
-      throw new Error(result.error || 'Erro ao processar imagem')
-    }
-
-    return {
-      url: result.url,
-      publicId: result.url // Usando a URL como publicId por enquanto
-    }
+    return result
   } catch (error) {
     console.error('Erro ao processar imagem:', error)
-    throw new Error('Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
+    return {
+      success: false,
+      error: 'Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido')
+    }
   }
 } 

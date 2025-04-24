@@ -108,10 +108,21 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     }
 
     try {
+      const response = await fetch('/api/motorcycles', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao salvar a motocicleta')
+      }
+
       await onSubmit(formData)
     } catch (error) {
       console.error('Erro ao enviar formulário:', error)
-      alert('Erro ao salvar a motocicleta. Por favor, tente novamente.')
+      alert(error instanceof Error ? error.message : 'Erro ao salvar a motocicleta. Por favor, tente novamente.')
     }
   }
 

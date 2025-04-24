@@ -1,7 +1,4 @@
 import sharp from 'sharp'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -11,55 +8,72 @@ const OUTPUT_QUALITY = 80
 
 export async function validateAndProcessImage(file: File): Promise<{ success: boolean; error?: string; url?: string }> {
   try {
+    console.log('=== Iniciando validação de imagem ===', {
+      nome: file.name,
+      tipo: file.type,
+      tamanho: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+    })
+
     // Validar tamanho
     if (file.size > MAX_FILE_SIZE) {
+      console.error('Imagem muito grande:', {
+        tamanhoRecebido: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+        tamanhoMaximo: `${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(2)}MB`
+      })
       return { success: false, error: 'Imagem muito grande (máximo 5MB)' }
     }
 
     // Validar tipo
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      console.error('Tipo de arquivo não permitido:', {
+        tipoRecebido: file.type,
+        tiposPermitidos: ALLOWED_FILE_TYPES
+      })
       return { success: false, error: 'Tipo de arquivo não permitido. Use JPEG, PNG ou WebP' }
     }
 
     // Ler arquivo
+    console.log('Convertendo arquivo para buffer...')
     const buffer = Buffer.from(await file.arrayBuffer())
+    console.log('Arquivo convertido para buffer com sucesso')
 
     // Processar imagem com sharp
+    console.log('Iniciando processamento com sharp...')
     const image = sharp(buffer)
     const metadata = await image.metadata()
+    console.log('Metadata da imagem:', metadata)
 
     // Sempre redimensionar para o tamanho máximo permitido
+    console.log('Redimensionando imagem...')
     image.resize(MAX_WIDTH, MAX_HEIGHT, {
       fit: 'inside',
       withoutEnlargement: true
     })
 
     // Converter para WebP e otimizar
+    console.log('Convertendo para WebP...')
     const processedBuffer = await image
       .webp({ quality: OUTPUT_QUALITY })
       .toBuffer()
+    console.log('Imagem convertida para WebP com sucesso')
 
-    // Gerar nome único para o arquivo
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    // Criar URL de dados temporária
+    const base64Image = processedBuffer.toString('base64')
+    const url = `data:image/webp;base64,${base64Image}`
     
-    // Verificar se o diretório existe, se não, criar
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
-    }
-    
-    const filePath = join(uploadsDir, fileName)
-
-    // Salvar arquivo
-    await writeFile(filePath, processedBuffer)
-
-    // Retornar URL relativa
+    console.log('=== Processamento concluído com sucesso ===')
     return {
       success: true,
-      url: `/uploads/${fileName}`
+      url
     }
   } catch (error) {
-    console.error('Erro ao processar imagem:', error)
-    return { success: false, error: 'Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido') }
+    console.error('Erro ao processar imagem:', {
+      erro: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return { 
+      success: false, 
+      error: 'Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido') 
+    }
   }
 } 

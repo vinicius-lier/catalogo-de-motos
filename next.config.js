@@ -7,7 +7,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-    unoptimized: false,
+    unoptimized: true,
     domains: ['localhost', 'res.cloudinary.com']
   },
   output: 'standalone',
@@ -18,6 +18,10 @@ const nextConfig = {
       path: false,
     };
     return config;
+  },
+  experimental: {
+    serverActions: true,
+    serverComponentsExternalPackages: ['sharp']
   }
 }
 
