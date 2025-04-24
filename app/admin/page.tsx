@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { formatPrice } from '@/app/utils/format'
 import { MotorcycleForm } from '@/app/components/MotorcycleForm'
 
@@ -33,11 +33,7 @@ export default function AdminPage() {
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    fetchMotorcycles()
-  }, [])
-
-  async function fetchMotorcycles() {
+  const fetchMotorcycles = useCallback(async () => {
     try {
       const response = await fetch('/api/motorcycles')
       const data = await response.json()
@@ -50,7 +46,11 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Erro ao buscar motos:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchMotorcycles()
+  }, [fetchMotorcycles])
 
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta moto?')) return

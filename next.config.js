@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -8,15 +9,9 @@ const nextConfig = {
         port: '3000',
         pathname: '/motos/**',
       },
-      {
-        protocol: 'http',
-        hostname: '192.168.1.71',
-        port: '3000',
-        pathname: '/motos/**',
-      }
     ],
+    unoptimized: true
   },
-  output: 'standalone',
 }
 
 module.exports = nextConfig 

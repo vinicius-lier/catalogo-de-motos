@@ -1,46 +1,89 @@
-import MotorcycleCard from './components/MotorcycleCard'
-import { prisma } from '@/lib/prisma'
+'use client'
 
-export default async function Home() {
-  const motorcycles = await prisma.motorcycle.findMany({
-    include: {
-      images: true,
-      colors: true
-    },
-    orderBy: {
-      createdAt: 'desc'
+import { useState, useEffect, useCallback } from 'react'
+import { ClientMotorcycleCard } from './components/ClientMotorcycleCard'
+
+interface Color {
+  id: string
+  name: string
+  hex: string
+  motorcycleId: string
+}
+
+interface Image {
+  id: string
+  url: string
+  motorcycleId: string
+}
+
+interface Motorcycle {
+  id: string
+  name: string
+  description: string
+  price: number
+  isSold: boolean
+  images: Image[]
+  colors: Color[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export default function Home() {
+  const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const getMotorcycles = useCallback(async () => {
+    try {
+      const response = await fetch('/api/motorcycles')
+      const data = await response.json()
+      const motorcyclesWithDates = data.map((moto: any) => ({
+        ...moto,
+        createdAt: new Date(moto.createdAt),
+        updatedAt: new Date(moto.updatedAt)
+      }))
+      setMotorcycles(motorcyclesWithDates)
+    } catch (error) {
+      console.error('Erro ao buscar motos:', error)
+    } finally {
+      setLoading(false)
     }
-  })
+  }, [])
 
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            Catálogo de Motos
-          </h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Explore nossa seleção exclusiva de motocicletas premium, com designs únicos e performance excepcional.
-          </p>
-        </div>
+  useEffect(() => {
+    getMotorcycles()
+  }, [getMotorcycles])
 
-        {motorcycles.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-2xl text-gray-600 font-light">
-              Nenhuma moto disponível no momento.
-            </p>
-            <p className="text-gray-500 mt-2">
-              Por favor, volte mais tarde para ver nossas novas motocicletas.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {motorcycles.map((motorcycle) => (
-              <MotorcycleCard key={motorcycle.id} motorcycle={motorcycle} />
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="bg-gray-200 h-96 rounded-lg"></div>
             ))}
           </div>
-        )}
+        </div>
       </div>
+    )
+  }
+
+  return (
+    <main className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800 font-poppins">
+        Catálogo de Motos
+      </h1>
+
+      {motorcycles.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {motorcycles.map((motorcycle) => (
+            <ClientMotorcycleCard key={motorcycle.id} motorcycle={motorcycle} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-gray-600 font-poppins">
+          Nenhuma moto disponível no momento.
+        </p>
+      )}
     </main>
   )
 } 
