@@ -1,16 +1,16 @@
 import sharp from 'sharp'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_WIDTH = 1920
-const MAX_HEIGHT = 1080
-const OUTPUT_QUALITY = 80
+const MAX_WIDTH = 800
+const MAX_HEIGHT = 600
+const OUTPUT_QUALITY = 60
 
 export async function validateAndProcessImage(file: File): Promise<{ success: boolean; error?: string; url?: string }> {
   try {
     // Validar tamanho
     if (file.size > MAX_FILE_SIZE) {
-      return { success: false, error: 'Imagem muito grande (máximo 5MB)' }
+      return { success: false, error: 'Imagem muito grande (máximo 1MB)' }
     }
 
     // Validar tipo
@@ -25,13 +25,11 @@ export async function validateAndProcessImage(file: File): Promise<{ success: bo
     const image = sharp(buffer)
     const metadata = await image.metadata()
 
-    // Redimensionar se necessário
-    if (metadata.width && metadata.width > MAX_WIDTH || metadata.height && metadata.height > MAX_HEIGHT) {
-      image.resize(MAX_WIDTH, MAX_HEIGHT, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-    }
+    // Sempre redimensionar para o tamanho máximo permitido
+    image.resize(MAX_WIDTH, MAX_HEIGHT, {
+      fit: 'inside',
+      withoutEnlargement: true
+    })
 
     // Converter para WebP e otimizar
     const processedBuffer = await image

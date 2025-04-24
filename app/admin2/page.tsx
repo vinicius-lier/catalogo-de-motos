@@ -81,8 +81,8 @@ export default function Admin2Page() {
     if (files) {
       // Validar tamanho e tipo
       const validFiles = Array.from(files).filter(file => {
-        if (file.size > 5 * 1024 * 1024) {
-          setError('Imagens devem ter no máximo 5MB')
+        if (file.size > 1 * 1024 * 1024) {
+          setError('Imagens devem ter no máximo 1MB')
           return false
         }
         if (!file.type.startsWith('image/')) {
@@ -235,7 +235,7 @@ export default function Admin2Page() {
             </div>
 
             <div>
-              <label className="block mb-2">Imagens (máx. 5MB cada)</label>
+              <label className="block mb-2">Imagens (máx. 1MB cada)</label>
               <input
                 type="file"
                 onChange={handleImageChange}

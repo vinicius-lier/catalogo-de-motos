@@ -12,6 +12,11 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true
   },
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb'
+    }
+  }
 }
 
 module.exports = nextConfig 
