@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm install --platform=linux --arch=x64 sharp",
     "build": "npm cache clean --force && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",

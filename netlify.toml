@@ -8,13 +8,15 @@
   NPM_FLAGS = "--no-optional --no-package-lock"
   PRISMA_GENERATE_DATAPROXY = "true"
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  SHARP_DIST_BASE_URL = "https://npmmirror.com/mirrors/sharp-libvips/v0.32.6/"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@prisma/client"]
+  external_node_modules = ["@prisma/client", "sharp"]
 
 [[redirects]]
   from = "/*"
