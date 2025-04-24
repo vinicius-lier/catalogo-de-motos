@@ -140,19 +140,60 @@ export default function Admin2Page() {
       formDataToSend.append('isSold', formData.isSold.toString())
       formDataToSend.append('colors', JSON.stringify(colors))
 
+      console.log('Dados do formulário:', {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        isSold: formData.isSold,
+        colors: colors
+      })
+
+      console.log('Imagens selecionadas:', {
+        quantidade: selectedImages?.length,
+        tamanhos: Array.from(selectedImages || []).map(img => ({
+          nome: img.name,
+          tamanho: (img.size / 1024 / 1024).toFixed(2) + 'MB',
+          tipo: img.type
+        }))
+      })
+
       Array.from(selectedImages).forEach((image) => {
         formDataToSend.append('images', image)
       })
 
+      // Log do FormData antes do envio
+      console.log('Conteúdo do FormData antes do envio:', {
+        name: formDataToSend.get('name'),
+        description: formDataToSend.get('description'),
+        price: formDataToSend.get('price'),
+        isSold: formDataToSend.get('isSold'),
+        colors: formDataToSend.get('colors'),
+        imagesCount: selectedImages?.length
+      })
+
+      console.log('Enviando requisição para:', '/api/motorcycles')
       const response = await fetch('/api/motorcycles', {
         method: 'POST',
         body: formDataToSend,
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Erro ao salvar motocicleta')
+        const errorData = await response.json().catch(e => {
+          console.error('Erro ao parsear resposta de erro:', e)
+          return { error: 'Erro ao ler resposta de erro' }
+        })
+        console.error('Detalhes completos do erro:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          headers: Object.fromEntries(response.headers.entries()),
+          errorData
+        })
+        throw new Error(errorData.error || `Erro ao salvar motocicleta: ${response.status} ${response.statusText}`)
       }
+
+      const responseData = await response.json()
+      console.log('Resposta de sucesso:', responseData)
 
       // Limpar formulário
       setFormData({
@@ -172,8 +213,8 @@ export default function Admin2Page() {
       // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
+      console.error('Erro ao salvar moto:', err)
       setError(err.message || 'Erro ao salvar motocicleta')
-      console.error(err)
     } finally {
       setSubmitting(false)
     }
