@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { MotorcycleWithRelations } from '@/types/prisma'
-import { MotorcycleCard } from './MotorcycleCard'
+import MotorcycleCard from './MotorcycleCard'
 import { MotorcycleModal } from './MotorcycleModal'
 
 interface ClientMotorcycleCardProps {

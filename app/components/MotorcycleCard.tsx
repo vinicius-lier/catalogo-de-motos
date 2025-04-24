@@ -12,9 +12,10 @@ interface MotorcycleWithDetails extends Motorcycle {
 
 interface MotorcycleCardProps {
   motorcycle: MotorcycleWithDetails
+  onDetailsClick?: () => void
 }
 
-export default function MotorcycleCard({ motorcycle }: MotorcycleCardProps) {
+export default function MotorcycleCard({ motorcycle, onDetailsClick }: MotorcycleCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [imageError, setImageError] = useState(false)
@@ -48,7 +49,7 @@ export default function MotorcycleCard({ motorcycle }: MotorcycleCardProps) {
 
   return (
     <>
-      <div className="motorcycle-card">
+      <div className="motorcycle-card" onClick={onDetailsClick}>
         <div className="image-container">
           <Image
             src={imageUrl}
@@ -77,7 +78,10 @@ export default function MotorcycleCard({ motorcycle }: MotorcycleCardProps) {
           <div className="flex items-center justify-between">
             <span className="price">{formatPrice(motorcycle.price)}</span>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalOpen(true);
+              }}
               className="details-button"
             >
               Ver Detalhes
