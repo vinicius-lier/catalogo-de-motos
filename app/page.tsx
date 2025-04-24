@@ -36,7 +36,13 @@ export default function Home() {
     try {
       const response = await fetch('/api/motorcycles')
       const data = await response.json()
-      const motorcyclesWithDates = data.map((moto: any) => ({
+      
+      if (!data || !data.data) {
+        console.error('Formato de resposta inválido:', data)
+        throw new Error('Formato de resposta inválido')
+      }
+      
+      const motorcyclesWithDates = data.data.map((moto: Motorcycle) => ({
         ...moto,
         createdAt: new Date(moto.createdAt),
         updatedAt: new Date(moto.updatedAt)

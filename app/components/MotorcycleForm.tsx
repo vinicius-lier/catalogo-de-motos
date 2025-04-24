@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import type { Motorcycle } from '@prisma/client'
@@ -28,7 +28,7 @@ interface MotorcycleFormProps {
   isLoading: boolean
 }
 
-function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: MotorcycleFormProps) {
+export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: MotorcycleFormProps) {
   const router = useRouter()
   const [name, setName] = useState(motorcycle?.name || '')
   const [description, setDescription] = useState(motorcycle?.description || '')
@@ -53,7 +53,7 @@ function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Motorcycl
     { name: 'Roxo', hex: '#800080' }
   ]
 
-  const [selectedColors, setSelectedColors] = useState<{ name: string; hex: string }[]>(
+  const [selectedColors, setSelectedColors] = useState<MotorcycleColor[]>(
     motorcycle?.colors?.map(color => ({
       name: color.name,
       hex: color.hex || availableColors.find(c => c.name === color.name)?.hex || '#000000'
@@ -89,6 +89,11 @@ function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Motorcycl
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
+    if (!selectedFiles && existingImages.length === 0) {
+      alert('Por favor, selecione pelo menos uma imagem')
+      return
+    }
+
     const formData = new FormData()
     formData.append('name', name)
     formData.append('description', description)
@@ -105,7 +110,8 @@ function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Motorcycl
     try {
       await onSubmit(formData)
     } catch (error) {
-      console.error('Erro:', error)
+      console.error('Erro ao enviar formulário:', error)
+      alert('Erro ao salvar a motocicleta. Por favor, tente novamente.')
     }
   }
 
@@ -285,5 +291,4 @@ function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Motorcycl
   )
 }
 
-export { MotorcycleForm }
 export default MotorcycleForm

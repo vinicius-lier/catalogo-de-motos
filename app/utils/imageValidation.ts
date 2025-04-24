@@ -1,21 +1,24 @@
 import sharp from 'sharp'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { existsSync } from 'fs'
 
-const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_WIDTH = 800
-const MAX_HEIGHT = 600
-const OUTPUT_QUALITY = 60
+const MAX_WIDTH = 1200
+const MAX_HEIGHT = 800
+const OUTPUT_QUALITY = 80
 
 export async function validateAndProcessImage(file: File): Promise<{ success: boolean; error?: string; url?: string }> {
   try {
     // Validar tamanho
     if (file.size > MAX_FILE_SIZE) {
-      return { success: false, error: 'Imagem muito grande (máximo 1MB)' }
+      return { success: false, error: 'Imagem muito grande (máximo 5MB)' }
     }
 
     // Validar tipo
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return { success: false, error: 'Tipo de arquivo não permitido' }
+      return { success: false, error: 'Tipo de arquivo não permitido. Use JPEG, PNG ou WebP' }
     }
 
     // Ler arquivo
@@ -36,15 +39,27 @@ export async function validateAndProcessImage(file: File): Promise<{ success: bo
       .webp({ quality: OUTPUT_QUALITY })
       .toBuffer()
 
-    // Converter para base64
-    const base64Image = `data:image/webp;base64,${processedBuffer.toString('base64')}`
+    // Gerar nome único para o arquivo
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    
+    // Verificar se o diretório existe, se não, criar
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true })
+    }
+    
+    const filePath = join(uploadsDir, fileName)
 
+    // Salvar arquivo
+    await writeFile(filePath, processedBuffer)
+
+    // Retornar URL relativa
     return {
       success: true,
-      url: base64Image
+      url: `/uploads/${fileName}`
     }
   } catch (error) {
     console.error('Erro ao processar imagem:', error)
-    return { success: false, error: 'Erro ao processar imagem' }
+    return { success: false, error: 'Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido') }
   }
 } 
