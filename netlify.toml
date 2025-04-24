@@ -3,6 +3,7 @@
   publish = ".next"
 
 [build.environment]
+  NEXT_USE_NETLIFY_EDGE = "true"
   NODE_VERSION = "18"
   NPM_FLAGS = "--no-optional --no-package-lock"
   PRISMA_GENERATE_DATAPXY = "true"
@@ -16,6 +17,7 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@prisma/client", "sharp"]
+  included_files = ["prisma/**"]
 
 [[redirects]]
   from = "/*"

@@ -13,9 +13,7 @@ const nextConfig = {
     unoptimized: true,
     domains: ['localhost', 'res.cloudinary.com']
   },
-  experimental: {
-    serverActions: true
-  },
+  output: 'standalone',
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,

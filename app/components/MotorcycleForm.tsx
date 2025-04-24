@@ -122,7 +122,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Nome da Moto
         </label>
         <input
@@ -130,12 +130,12 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Descrição
         </label>
         <textarea
@@ -143,12 +143,12 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
           onChange={(e) => setDescription(e.target.value)}
           required
           rows={4}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Preço
         </label>
         <div className="relative mt-1 rounded-md shadow-sm">
@@ -160,7 +160,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             required
-            className="block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
             placeholder="0.00"
             step="0.01"
           />
@@ -168,7 +168,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Imagens
         </label>
         {existingImages.length > 0 && (
@@ -223,7 +223,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Cores Disponíveis
         </label>
         <div className="grid grid-cols-4 gap-2 mb-4">
@@ -265,7 +265,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
             }`}
           />
         </button>
-        <span className="ml-3 text-sm font-medium text-gray-700">
+        <span className="ml-3 text-sm font-medium text-white">
           Marcar como vendida
         </span>
       </div>
