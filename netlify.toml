@@ -7,6 +7,7 @@
   NODE_VERSION = "18"
   PRISMA_GENERATE_DATAPXY = "true"
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
+  DATABASE_URL = "postgresql://neondb_owner:npg_YOeiUQj4z9JR@ep-fragrant-hill-a4y51wjr-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
