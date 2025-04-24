@@ -61,7 +61,9 @@ export default function Admin2Page() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/motorcycles?page=${page}`)
+      // Usar URL base correta
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+      const response = await fetch(`${baseUrl}/api/motorcycles?page=${page}`)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
@@ -151,23 +153,6 @@ export default function Admin2Page() {
       formDataToSend.append('isSold', formData.isSold.toString())
       formDataToSend.append('colors', JSON.stringify(colors))
 
-      console.log('Dados do formulário:', {
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        isSold: formData.isSold,
-        colors: colors
-      })
-
-      console.log('Imagens selecionadas:', {
-        quantidade: selectedImages?.length,
-        tamanhos: Array.from(selectedImages || []).map(img => ({
-          nome: img.name,
-          tamanho: (img.size / 1024 / 1024).toFixed(2) + 'MB',
-          tipo: img.type
-        }))
-      })
-
       Array.from(selectedImages).forEach((image) => {
         formDataToSend.append('images', image)
       })
@@ -182,8 +167,11 @@ export default function Admin2Page() {
         imagesCount: selectedImages?.length
       })
 
-      console.log('Enviando requisição para:', '/api/motorcycles')
-      const response = await fetch('/api/motorcycles', {
+      // Usar URL base correta
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+      console.log('Enviando requisição para:', `${baseUrl}/api/motorcycles`)
+      
+      const response = await fetch(`${baseUrl}/api/motorcycles`, {
         method: 'POST',
         body: formDataToSend,
       })

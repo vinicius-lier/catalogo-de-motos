@@ -6,10 +6,11 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--no-optional --no-package-lock"
-  PRISMA_GENERATE_DATAPROXY = "true"
+  PRISMA_GENERATE_DATAPXY = "true"
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
   SHARP_DIST_BASE_URL = "https://npmmirror.com/mirrors/sharp-libvips/v0.32.6/"
+  NEXT_PUBLIC_API_URL = "https://680a5085286f2464b37fafa7--catalogomotosprado.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -17,6 +18,12 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@prisma/client", "sharp"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
