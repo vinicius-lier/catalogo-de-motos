@@ -17,16 +17,6 @@
   external_node_modules = ["@prisma/client"]
   included_files = ["prisma/**"]
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = true
-
-[dev]
-  framework = "next"
-  targetPort = 3000
-
 [[headers]]
   for = "/api/*"
   [headers.values]
