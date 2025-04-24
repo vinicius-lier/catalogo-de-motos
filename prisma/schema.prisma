@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Motorcycle {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  isSold      Boolean   @default(false)
+  images      Image[]
+  colors      Color[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Image {
+  id           String     @id @default(uuid())
+  url          String
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+  motorcycleId String
+}
+
+model Color {
+  id           String     @id @default(uuid())
+  name         String
+  hex          String
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+  motorcycleId String
+} 

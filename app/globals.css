@@ -1,0 +1,362 @@
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  @apply bg-gradient-to-br from-gray-50 to-white min-h-screen;
+}
+
+.container {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+/* Estilos do cartão de moto */
+.motorcycle-card {
+  @apply relative overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:shadow-2xl;
+  background: linear-gradient(145deg, #ffffff, #f3f4f6);
+}
+
+.motorcycle-card:hover {
+  transform: translateY(-5px);
+}
+
+.motorcycle-card .image-container {
+  @apply relative aspect-[4/3] overflow-hidden rounded-t-2xl;
+}
+
+.motorcycle-card .image-container::after {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300;
+}
+
+.motorcycle-card:hover .image-container::after {
+  @apply opacity-100;
+}
+
+.motorcycle-card .image-container img {
+  @apply object-cover transition-transform duration-500;
+}
+
+.motorcycle-card:hover .image-container img {
+  @apply scale-110;
+}
+
+.motorcycle-card .content {
+  @apply p-6 bg-white relative;
+}
+
+.motorcycle-card .title {
+  @apply mb-2 text-xl font-bold text-gray-800;
+  background: linear-gradient(to right, #1a1a1a, #4a4a4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.motorcycle-card .description {
+  @apply mb-4 line-clamp-2 text-sm text-gray-600;
+}
+
+.motorcycle-card .colors {
+  @apply mb-4 flex gap-2;
+}
+
+.motorcycle-card .color-dot {
+  @apply h-6 w-6 rounded-full shadow-inner transition-transform hover:scale-110;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.motorcycle-card .price {
+  @apply text-2xl font-bold;
+  background: linear-gradient(to right, #dc2626, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.motorcycle-card .details-button {
+  @apply rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:from-red-500 hover:to-red-600 hover:shadow-lg;
+}
+
+.motorcycle-card .sold-badge {
+  @apply absolute right-3 top-3 z-20 rounded-full bg-gradient-to-r from-red-600 to-red-500 px-3 py-1 text-sm font-medium text-white shadow-lg;
+}
+
+/* Estilos do modal de detalhes */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm;
+}
+
+.modal-content {
+  @apply relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl;
+}
+
+.modal-close {
+  @apply absolute right-4 top-4 rounded-full bg-gray-100 p-2 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700;
+}
+
+.modal-image {
+  @apply relative aspect-[16/9] overflow-hidden rounded-2xl;
+}
+
+.modal-nav-button {
+  @apply absolute top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg transition-all hover:bg-red-500 hover:text-white;
+}
+
+.modal-nav-button.prev {
+  @apply left-4;
+}
+
+.modal-nav-button.next {
+  @apply right-4;
+}
+
+.modal-details {
+  @apply mt-8 space-y-6;
+}
+
+.modal-title {
+  @apply text-3xl font-bold text-gray-800;
+}
+
+.modal-description {
+  @apply text-lg text-gray-600;
+}
+
+.modal-colors {
+  @apply flex gap-4;
+}
+
+.modal-color {
+  @apply flex items-center gap-2;
+}
+
+.modal-color-dot {
+  @apply h-8 w-8 rounded-full shadow-inner;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.modal-color-name {
+  @apply text-sm text-gray-600;
+}
+
+.modal-price {
+  @apply text-3xl font-bold;
+  background: linear-gradient(to right, #dc2626, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modal-contact {
+  @apply mt-8 inline-block rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white transition-all duration-300 hover:from-red-500 hover:to-red-600 hover:shadow-lg;
+}
+
+.container .card {
+  position: relative;
+  width: 320px;
+  height: 450px;
+  background: transparent;
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.container .card:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #CC0000, #1C1C1C);
+  clip-path: circle(150px at 80% 20%);
+  transition: 0.5s ease-in-out;
+  z-index: 2;
+}
+
+.container .card:hover:before {
+  clip-path: circle(300px at 80% -20%);
+}
+
+.container .card:after {
+  content: 'MOTO';
+  position: absolute;
+  top: 30%;
+  left: -20%;
+  font-size: 12em;
+  font-weight: 800;
+  font-style: italic;
+  color: rgba(255,255,255,0.05);
+}
+
+.container .card .imgBx {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 100%;
+  height: 220px;
+  transition: 0.5s;
+}
+
+.container .card:hover .imgBx {
+  top: 0%;
+  transform: translateY(0%);
+}
+
+.container .card .imgBx .product-img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 270px;
+  height: auto;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+}
+
+.container .card .contentBx {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100px;
+  text-align: center;
+  transition: 1s;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.container .card:hover .contentBx {
+  height: 250px;
+}
+
+.container .card .contentBx h2 {
+  position: relative;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.container .card .contentBx .specs,
+.container .card .contentBx .color,
+.container .card .contentBx .price {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 20px;
+  transition: 0.5s;
+  opacity: 0;
+  visibility: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.container .card .contentBx .specs {
+  flex-direction: column;
+}
+
+.container .card .contentBx .description {
+  color: #fff;
+  font-size: 12px;
+  opacity: 0.8;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.container .card:hover .contentBx .specs {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0.5s;
+}
+
+.container .card:hover .contentBx .color {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0.6s;
+}
+
+.container .card:hover .contentBx .price {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0.7s;
+}
+
+.container .card .contentBx h3 {
+  color: #fff;
+  font-weight: 300;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-right: 10px;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.container .card .contentBx .color span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: 0.5s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.container .card .contentBx .color span:hover {
+  transform: scale(1.2);
+}
+
+.container .card .contentBx a {
+  display: inline-block;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  margin-top: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  color: #111;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: 0.5s;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.container .card:hover .contentBx a {
+  opacity: 1;
+  transform: translateY(0px);
+  transition-delay: 0.75s;
+}
+
+.container .card .contentBx a:hover {
+  background: linear-gradient(135deg, #CC0000, #1C1C1C);
+  color: #fff;
+}
+
+.container .card .sold-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 0, 0, 0.9);
+  color: #fff;
+  padding: 5px 15px;
+  border-radius: 25px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 20;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+} 
