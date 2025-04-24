@@ -59,17 +59,28 @@ export default function Admin2Page() {
   async function fetchMotorcycles() {
     try {
       setLoading(true)
+      setError(null)
+      
       const response = await fetch(`/api/motorcycles?page=${page}`)
+      
       if (!response.ok) {
-        throw new Error('Erro ao carregar motocicletas')
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
+        throw new Error(errorData.error || 'Erro ao carregar motocicletas')
       }
-      const data: ApiResponse = await response.json()
-      setMotorcycles(data.motorcycles || [])
+      
+      const data = await response.json()
+      
+      // Verificar se a resposta tem o formato esperado
+      if (!data || !Array.isArray(data.motorcycles)) {
+        throw new Error('Formato de resposta inválido')
+      }
+      
+      setMotorcycles(data.motorcycles)
       setTotalPages(data.totalPages || 1)
       setError(null)
-    } catch (err) {
-      setError('Erro ao carregar motocicletas')
-      console.error(err)
+    } catch (err: any) {
+      console.error('Erro ao buscar motos:', err)
+      setError(err.message || 'Erro ao carregar motocicletas')
       setMotorcycles([])
     } finally {
       setLoading(false)

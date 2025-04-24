@@ -2,19 +2,36 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateAndProcessImage } from '@/app/utils/imageValidation'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const motorcycles = await prisma.motorcycle.findMany({
-      include: {
-        images: true,
-        colors: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    const { searchParams } = new URL(request.url)
+    const page = Number(searchParams.get('page')) || 1
+    const limit = 10
+    const skip = (page - 1) * limit
 
-    return NextResponse.json(motorcycles)
+    const [motorcycles, total] = await Promise.all([
+      prisma.motorcycle.findMany({
+        include: {
+          images: true,
+          colors: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+        skip: skip
+      }),
+      prisma.motorcycle.count()
+    ])
+
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json({
+      motorcycles,
+      totalPages,
+      currentPage: page,
+      total
+    })
   } catch (error) {
     console.error('Erro ao buscar motos:', error)
     return NextResponse.json(
