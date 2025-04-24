@@ -1,7 +1,6 @@
 [build]
   command = "npm run build"
   publish = ".next"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
 
 [build.environment]
   NODE_VERSION = "18"
@@ -10,7 +9,6 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
   SHARP_DIST_BASE_URL = "https://npmmirror.com/mirrors/sharp-libvips/v0.32.6/"
-  NEXT_PUBLIC_API_URL = "https://680a5085286f2464b37fafa7--catalogomotosprado.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -20,12 +18,18 @@
   external_node_modules = ["@prisma/client", "sharp"]
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
   force = true
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200 
+[dev]
+  framework = "next"
+  targetPort = 3000
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type" 
