@@ -1,5 +1,3 @@
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import sharp from 'sharp'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -40,24 +38,12 @@ export async function validateAndProcessImage(file: File): Promise<{ success: bo
       .webp({ quality: OUTPUT_QUALITY })
       .toBuffer()
 
-    // Gerar nome único
-    const filename = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}.webp`
-    const uploadDir = join(process.cwd(), 'public/uploads')
-    const filepath = join(uploadDir, filename)
-
-    // Criar diretório se não existir
-    try {
-      await mkdir(uploadDir, { recursive: true })
-    } catch (error) {
-      // Ignora erro se diretório já existe
-    }
-
-    // Salvar arquivo
-    await writeFile(filepath, processedBuffer)
+    // Converter para base64
+    const base64Image = `data:image/webp;base64,${processedBuffer.toString('base64')}`
 
     return {
       success: true,
-      url: `/uploads/${filename}`
+      url: base64Image
     }
   } catch (error) {
     console.error('Erro ao processar imagem:', error)
