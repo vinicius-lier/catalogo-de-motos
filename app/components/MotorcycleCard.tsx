@@ -67,7 +67,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
           <div className="colors">
             {motorcycle.colors.map((color) => (
               <div
-                key={color.hex}
+                key={color.id}
                 className="color-dot"
                 style={{ backgroundColor: color.hex }}
                 title={color.name}
@@ -124,7 +124,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
               
               <div className="modal-colors">
                 {motorcycle.colors.map((color) => (
-                  <div key={color.hex} className="modal-color">
+                  <div key={color.id} className="modal-color">
                     <div
                       className="modal-color-dot"
                       style={{ backgroundColor: color.hex }}
