@@ -7,10 +7,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: true,
+    unoptimized: false,
     domains: ['localhost', 'res.cloudinary.com']
   },
   output: 'standalone',

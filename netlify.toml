@@ -5,18 +5,15 @@
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   NODE_VERSION = "18"
-  NPM_FLAGS = "--no-optional --no-package-lock"
   PRISMA_GENERATE_DATAPXY = "true"
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
-  SHARP_DIST_BASE_URL = "https://npmmirror.com/mirrors/sharp-libvips/v0.32.6/"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@prisma/client", "sharp"]
+  external_node_modules = ["@prisma/client"]
   included_files = ["prisma/**"]
 
 [[redirects]]

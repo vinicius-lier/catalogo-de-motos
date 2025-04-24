@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MotorcycleForm } from '@/app/components/MotorcycleForm';
-import { MotorcycleDetailsModal } from '@/app/components/MotorcycleDetailsModal';
+import { MotorcycleModal } from '@/app/components/MotorcycleModal';
 import { Motorcycle, Image as MotorcycleImage, Color as MotorcycleColor } from '@prisma/client';
 
 type MotorcycleWithRelations = Motorcycle & {
@@ -178,13 +178,11 @@ export default function Admin2Page() {
       </div>
 
       {/* Modal de detalhes */}
-      {isDetailsOpen && selectedMotorcycle && (
-        <MotorcycleDetailsModal
+      {selectedMotorcycle && (
+        <MotorcycleModal
           motorcycle={selectedMotorcycle}
-          onClose={() => {
-            setIsDetailsOpen(false);
-            setSelectedMotorcycle(null);
-          }}
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
         />
       )}
     </div>
