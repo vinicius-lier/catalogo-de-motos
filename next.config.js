@@ -11,12 +11,10 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true,
-    domains: ['localhost']
+    domains: ['localhost', 'res.cloudinary.com']
   },
   experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', 'localhost:3001']
-    }
+    serverActions: true
   },
   webpack: (config) => {
     config.resolve.fallback = {
