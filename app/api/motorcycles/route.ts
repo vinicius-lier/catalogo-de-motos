@@ -51,8 +51,7 @@ const MotorcycleSchema = z.object({
   description: z.string(),
   price: z.string().transform(val => Number(val)),
   isSold: z.boolean(),
-  colors: z.array(ColorSchema),
-  images: z.array(z.instanceof(File))
+  colors: z.array(ColorSchema)
 })
 
 type ValidationError = {
