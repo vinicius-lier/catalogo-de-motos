@@ -20,7 +20,6 @@ const nextConfig = {
     return config;
   },
   experimental: {
-    serverActions: true,
     serverComponentsExternalPackages: ['sharp']
   }
 }

@@ -31,11 +31,19 @@ interface Motorcycle {
 export default function Home() {
   const [motorcycles, setMotorcycles] = useState<Motorcycle[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const getMotorcycles = useCallback(async () => {
     try {
+      console.log('Iniciando busca de motos...')
       const response = await fetch('/api/motorcycles')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
+      console.log('Dados recebidos:', data)
       
       if (!data || !data.data) {
         console.error('Formato de resposta inválido:', data)
@@ -47,9 +55,13 @@ export default function Home() {
         createdAt: new Date(moto.createdAt),
         updatedAt: new Date(moto.updatedAt)
       }))
+      
+      console.log('Motos processadas:', motorcyclesWithDates)
       setMotorcycles(motorcyclesWithDates)
+      setError(null)
     } catch (error) {
       console.error('Erro ao buscar motos:', error)
+      setError(error instanceof Error ? error.message : 'Erro ao carregar motos')
     } finally {
       setLoading(false)
     }
@@ -68,6 +80,17 @@ export default function Home() {
               <div key={n} className="bg-gray-200 h-96 rounded-lg"></div>
             ))}
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Erro! </strong>
+          <span className="block sm:inline">{error}</span>
         </div>
       </div>
     )
