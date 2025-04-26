@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import { Blob } from 'buffer'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -6,47 +7,45 @@ const MAX_WIDTH = 1200
 const MAX_HEIGHT = 800
 const OUTPUT_QUALITY = 80
 
-interface FileWithArrayBuffer extends File {
+interface FileData {
+  name: string
+  type: string
+  size: number
   arrayBuffer(): Promise<ArrayBuffer>
 }
 
-const isFileWithArrayBuffer = (value: any): value is FileWithArrayBuffer => {
+const isValidFileData = (value: any): value is FileData => {
   return (
     value != null &&
     typeof value === 'object' &&
     'name' in value &&
     'size' in value &&
     'type' in value &&
-    'lastModified' in value &&
     typeof value.arrayBuffer === 'function'
   )
 }
 
-export async function validateAndProcessImage(file: File): Promise<{ success: boolean; error?: string; url?: string }> {
+export async function validateAndProcessImage(fileData: FileData): Promise<{ success: boolean; error?: string; url?: string }> {
   try {
-    if (!isFileWithArrayBuffer(file)) {
-      return { success: false, error: 'Arquivo inválido: não suporta arrayBuffer' }
-    }
-
     console.log('=== Iniciando validação de imagem ===', {
-      nome: file.name,
-      tipo: file.type,
-      tamanho: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      nome: fileData.name,
+      tipo: fileData.type,
+      tamanho: `${(fileData.size / (1024 * 1024)).toFixed(2)}MB`
     })
 
     // Validar tamanho
-    if (file.size > MAX_FILE_SIZE) {
+    if (fileData.size > MAX_FILE_SIZE) {
       console.error('Imagem muito grande:', {
-        tamanhoRecebido: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+        tamanhoRecebido: `${(fileData.size / (1024 * 1024)).toFixed(2)}MB`,
         tamanhoMaximo: `${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(2)}MB`
       })
       return { success: false, error: 'Imagem muito grande (máximo 5MB)' }
     }
 
     // Validar tipo
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    if (!ALLOWED_FILE_TYPES.includes(fileData.type)) {
       console.error('Tipo de arquivo não permitido:', {
-        tipoRecebido: file.type,
+        tipoRecebido: fileData.type,
         tiposPermitidos: ALLOWED_FILE_TYPES
       })
       return { success: false, error: 'Tipo de arquivo não permitido. Use JPEG, PNG ou WebP' }
@@ -54,7 +53,7 @@ export async function validateAndProcessImage(file: File): Promise<{ success: bo
 
     // Ler arquivo
     console.log('Convertendo arquivo para buffer...')
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = Buffer.from(await fileData.arrayBuffer())
     console.log('Arquivo convertido para buffer com sucesso')
 
     // Processar imagem com sharp

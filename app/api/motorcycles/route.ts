@@ -60,14 +60,21 @@ type ValidationError = {
 }
 
 // Adicionar no topo do arquivo, após os imports
-const isFile = (value: any): value is File => {
+interface FileData {
+  name: string
+  type: string
+  size: number
+  arrayBuffer(): Promise<ArrayBuffer>
+}
+
+const isValidFileData = (value: any): value is FileData => {
   return (
     value != null &&
     typeof value === 'object' &&
     'name' in value &&
     'size' in value &&
     'type' in value &&
-    'lastModified' in value
+    typeof value.arrayBuffer === 'function'
   )
 }
 
@@ -190,12 +197,11 @@ export async function POST(request: NextRequest) {
     // Log de todos os campos
     console.log('=== Campos recebidos ===')
     Array.from(formData.entries()).forEach(([key, value]) => {
-      if (isFile(value)) {
+      if (isValidFileData(value)) {
         console.log(`${key}:`, {
           name: value.name,
           type: value.type,
-          size: `${(value.size / (1024 * 1024)).toFixed(2)}MB`,
-          lastModified: new Date(value.lastModified).toISOString()
+          size: `${(value.size / (1024 * 1024)).toFixed(2)}MB`
         })
       } else {
         console.log(`${key}:`, value)
@@ -449,10 +455,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function processImage(file: FormDataEntryValue): Promise<ImageResult> {
-  if (!isFile(file)) {
+  if (!isValidFileData(file)) {
     return {
       success: false,
-      error: 'Dado recebido não é um arquivo'
+      error: 'Dado recebido não é um arquivo válido'
     }
   }
 
