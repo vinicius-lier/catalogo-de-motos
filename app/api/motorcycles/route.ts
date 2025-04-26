@@ -61,11 +61,27 @@ type ValidationError = {
 
 export async function GET(request: Request) {
   try {
+    console.log('=== Iniciando busca de motocicletas ===')
+    
     const url = new URL(request.url)
     const page = url.searchParams.get('page')
     const pageNumber = page ? parseInt(page) : 1
     const limit = 10
     const skip = (pageNumber - 1) * limit
+
+    console.log('Parâmetros de paginação:', { pageNumber, limit, skip })
+
+    // Teste de conexão com o banco
+    try {
+      await prisma.$connect()
+      console.log('Conexão com o banco estabelecida com sucesso')
+    } catch (dbError) {
+      console.error('Erro ao conectar com o banco:', dbError)
+      return NextResponse.json(
+        { error: 'Erro de conexão com o banco de dados' },
+        { status: 500 }
+      )
+    }
 
     const motorcycles = await prisma.motorcycle.findMany({
       skip,
@@ -76,8 +92,12 @@ export async function GET(request: Request) {
       }
     })
 
+    console.log(`Encontradas ${motorcycles.length} motocicletas`)
+
     const total = await prisma.motorcycle.count()
     const totalPages = Math.ceil(total / limit)
+
+    console.log('Informações de paginação:', { total, totalPages, currentPage: pageNumber })
 
     return NextResponse.json({
       data: motorcycles,
@@ -89,11 +109,23 @@ export async function GET(request: Request) {
     })
 
   } catch (error) {
-    console.error('Erro ao buscar motocicletas:', error instanceof Error ? error.message : 'Erro desconhecido')
+    console.error('Erro detalhado ao buscar motocicletas:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
     return NextResponse.json(
-      { error: 'Erro ao buscar motocicletas' },
+      { error: 'Erro ao buscar motocicletas. Por favor, tente novamente mais tarde.' },
       { status: 500 }
     )
+  } finally {
+    try {
+      await prisma.$disconnect()
+      console.log('Desconectado do banco com sucesso')
+    } catch (disconnectError) {
+      console.error('Erro ao desconectar do banco:', disconnectError)
+    }
   }
 }
 
