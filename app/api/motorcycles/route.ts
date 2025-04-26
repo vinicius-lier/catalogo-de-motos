@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
     const headers = Object.fromEntries(request.headers)
     console.log('Request headers:', {
       'content-type': headers['content-type'],
-      'content-length': headers['content-length']
+      'content-length': headers['content-length'],
+      'all-headers': headers // Adicionando todos os headers para debug
     })
 
     // Verificar content-type
@@ -146,6 +147,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Content-type deve ser multipart/form-data' },
         { status: 400 }
+      )
+    }
+
+    // Teste de conexão com o banco antes de prosseguir
+    try {
+      await prisma.$connect()
+      console.log('Conexão com o banco estabelecida com sucesso')
+    } catch (dbError) {
+      console.error('Erro ao conectar com o banco:', dbError)
+      return NextResponse.json(
+        { error: 'Erro de conexão com o banco de dados' },
+        { status: 500 }
       )
     }
 
@@ -402,11 +415,24 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error: any) {
-    console.error('Erro geral na rota POST:', error)
+    console.error('Erro detalhado na rota POST:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      code: error?.code,
+      meta: error?.meta
+    })
     return NextResponse.json(
-      { error: 'Erro ao processar requisição' },
+      { error: 'Erro ao processar requisição: ' + (error?.message || 'Erro desconhecido') },
       { status: 500 }
     )
+  } finally {
+    try {
+      await prisma.$disconnect()
+      console.log('Desconectado do banco com sucesso')
+    } catch (disconnectError) {
+      console.error('Erro ao desconectar do banco:', disconnectError)
+    }
   }
 }
 
