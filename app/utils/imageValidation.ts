@@ -6,8 +6,28 @@ const MAX_WIDTH = 1200
 const MAX_HEIGHT = 800
 const OUTPUT_QUALITY = 80
 
+interface FileWithArrayBuffer extends File {
+  arrayBuffer(): Promise<ArrayBuffer>
+}
+
+const isFileWithArrayBuffer = (value: any): value is FileWithArrayBuffer => {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    'name' in value &&
+    'size' in value &&
+    'type' in value &&
+    'lastModified' in value &&
+    typeof value.arrayBuffer === 'function'
+  )
+}
+
 export async function validateAndProcessImage(file: File): Promise<{ success: boolean; error?: string; url?: string }> {
   try {
+    if (!isFileWithArrayBuffer(file)) {
+      return { success: false, error: 'Arquivo inválido: não suporta arrayBuffer' }
+    }
+
     console.log('=== Iniciando validação de imagem ===', {
       nome: file.name,
       tipo: file.type,

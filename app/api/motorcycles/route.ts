@@ -59,6 +59,18 @@ type ValidationError = {
   field?: string
 }
 
+// Adicionar no topo do arquivo, após os imports
+const isFile = (value: any): value is File => {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    'name' in value &&
+    'size' in value &&
+    'type' in value &&
+    'lastModified' in value
+  )
+}
+
 export async function GET(request: Request) {
   try {
     console.log('=== Iniciando busca de motocicletas ===')
@@ -178,7 +190,7 @@ export async function POST(request: NextRequest) {
     // Log de todos os campos
     console.log('=== Campos recebidos ===')
     Array.from(formData.entries()).forEach(([key, value]) => {
-      if (value instanceof File) {
+      if (isFile(value)) {
         console.log(`${key}:`, {
           name: value.name,
           type: value.type,
@@ -437,7 +449,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function processImage(file: FormDataEntryValue): Promise<ImageResult> {
-  if (!(file instanceof File)) {
+  if (!isFile(file)) {
     return {
       success: false,
       error: 'Dado recebido não é um arquivo'
