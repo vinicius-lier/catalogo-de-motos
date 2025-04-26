@@ -18,13 +18,19 @@ interface MotorcycleColor {
   hex: string
 }
 
+interface MotorcycleWithRelations {
+  name: string
+  description: string
+  price: number
+  isSold: boolean
+  images: MotorcycleImage[]
+  colors: MotorcycleColor[]
+}
+
 interface MotorcycleFormProps {
-  onSubmit: (formData: FormData) => Promise<void>
+  motorcycle?: MotorcycleWithRelations
+  onSubmit: (data: any) => Promise<void>
   onCancel: () => void
-  motorcycle: (Motorcycle & {
-    images: MotorcycleImage[]
-    colors: MotorcycleColor[]
-  }) | null
   isLoading: boolean
 }
 
@@ -88,40 +94,90 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    console.log('=== Iniciando submissão do formulário ===')
 
     if (!selectedFiles && existingImages.length === 0) {
+      console.error('Nenhuma imagem selecionada')
       alert('Por favor, selecione pelo menos uma imagem')
       return
     }
 
-    const formData = new FormData()
-    formData.append('name', name)
-    formData.append('description', description)
-    formData.append('price', price)
-    formData.append('isSold', isSold.toString())
-    formData.append('colors', JSON.stringify(selectedColors))
-
-    if (selectedFiles) {
-      Array.from(selectedFiles).forEach((file) => {
-        formData.append('images', file)
-      })
-    }
-
     try {
-      const response = await fetch('/api/motorcycles', {
-        method: 'POST',
-        body: formData
-      })
+      console.log('Convertendo imagens para base64...')
+      const imagePromises = selectedFiles ? Array.from(selectedFiles).map(file => {
+        return new Promise<{ base64: string; name: string; type: string }>((resolve, reject) => {
+          console.log('Processando imagem:', file.name)
+          const reader = new FileReader()
+          reader.onload = () => {
+            console.log('Imagem convertida com sucesso:', file.name)
+            resolve({
+              base64: reader.result as string,
+              name: file.name,
+              type: file.type
+            })
+          }
+          reader.onerror = (error) => {
+            console.error('Erro ao converter imagem:', file.name, error)
+            reject(error)
+          }
+          reader.readAsDataURL(file)
+        })
+      }) : []
 
-      const data = await response.json()
+      const images = await Promise.all(imagePromises)
+      console.log(`${images.length} imagens processadas com sucesso`)
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar a motocicleta')
+      const data = {
+        name,
+        description,
+        price: Number(price),
+        colors: selectedColors,
+        images
       }
 
-      await onSubmit(formData)
+      console.log('Dados a serem enviados:', {
+        ...data,
+        images: data.images.map(img => ({
+          name: img.name,
+          type: img.type,
+          size: Math.round(img.base64.length * 0.75) // Estimativa do tamanho em bytes
+        }))
+      })
+
+      console.log('Enviando requisição para a API...')
+      const response = await fetch('/api/motorcycles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+
+      console.log('Status da resposta:', response.status)
+      const responseText = await response.text()
+      console.log('Resposta completa:', responseText)
+      
+      let responseData
+      try {
+        responseData = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Erro ao fazer parse da resposta:', parseError)
+        throw new Error('Erro ao processar resposta do servidor')
+      }
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Erro ao salvar a motocicleta')
+      }
+
+      console.log('Motocicleta salva com sucesso:', responseData)
+      await onSubmit(data)
     } catch (error) {
-      console.error('Erro ao enviar formulário:', error)
+      console.error('Erro detalhado:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        response: error instanceof Error ? (error as any).response : undefined
+      })
       alert(error instanceof Error ? error.message : 'Erro ao salvar a motocicleta. Por favor, tente novamente.')
     }
   }

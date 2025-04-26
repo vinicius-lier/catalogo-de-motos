@@ -170,10 +170,40 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('=== Iniciando rota POST /api/motorcycles ===')
+  
   try {
+    // Testar conexão com o banco
+    try {
+      console.log('Testando conexão com o banco...')
+      await prisma.$connect()
+      console.log('Conexão com o banco estabelecida com sucesso')
+      
+      const count = await prisma.motorcycle.count()
+      console.log('Total de motos no banco:', count)
+    } catch (dbError) {
+      console.error('Erro ao conectar com o banco:', {
+        name: dbError instanceof Error ? dbError.name : 'Unknown',
+        message: dbError instanceof Error ? dbError.message : 'Erro desconhecido',
+        code: dbError instanceof Error ? (dbError as any).code : undefined,
+        meta: dbError instanceof Error ? (dbError as any).meta : undefined
+      })
+      throw new Error('Erro de conexão com o banco de dados')
+    }
+
+    console.log('Obtendo dados da requisição...')
     const data = await request.json()
+    console.log('Dados recebidos:', {
+      ...data,
+      images: data.images?.map((img: any) => ({
+        name: img.name,
+        type: img.type,
+        size: img.base64?.length || 0
+      }))
+    })
     
     // Validar dados
+    console.log('Validando dados...')
     const validationResult = motorcycleSchema.safeParse(data)
     if (!validationResult.success) {
       console.error('Erro de validação:', validationResult.error)
@@ -182,21 +212,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    console.log('Dados validados com sucesso')
 
     const { images, ...motorcycleData } = validationResult.data
 
     // Processar imagens
+    console.log('Processando imagens...')
     const processedImages = await Promise.all(
-      images.map(async (image: ImageData) => {
+      images.map(async (image: ImageData, index: number) => {
+        console.log(`Processando imagem ${index + 1}/${images.length}`)
         const result = await validateAndProcessImage(image)
         if (!result.success || !result.url) {
+          console.error(`Erro ao processar imagem ${index + 1}:`, result.error)
           throw new Error(result.error || 'Erro ao processar imagem')
         }
+        console.log(`Imagem ${index + 1} processada com sucesso`)
         return result.url
       })
     )
+    console.log('Todas as imagens processadas com sucesso')
 
     // Criar registro no banco
+    console.log('Criando registro no banco...')
     const motorcycle = await prisma.motorcycle.create({
       data: {
         name: motorcycleData.name,
@@ -215,13 +252,32 @@ export async function POST(request: NextRequest) {
         colors: true
       }
     })
+    console.log('Registro criado com sucesso:', motorcycle)
 
     return NextResponse.json(motorcycle)
   } catch (error) {
-    console.error('Erro ao criar moto:', error)
+    console.error('Erro detalhado na rota POST:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined,
+      code: error instanceof Error ? (error as any).code : undefined,
+      meta: error instanceof Error ? (error as any).meta : undefined
+    })
+    
     return NextResponse.json(
-      { error: 'Erro ao criar moto', details: error instanceof Error ? error.message : 'Erro desconhecido' },
+      { 
+        error: 'Erro ao criar moto', 
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
+      },
       { status: 500 }
     )
+  } finally {
+    try {
+      await prisma.$disconnect()
+      console.log('Desconectado do banco com sucesso')
+    } catch (disconnectError) {
+      console.error('Erro ao desconectar do banco:', disconnectError)
+    }
   }
 } 
