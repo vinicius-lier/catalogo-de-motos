@@ -41,6 +41,8 @@ interface MotorcycleFormProps {
 
 export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: MotorcycleFormProps) {
   const router = useRouter()
+  console.log('MotorcycleForm renderizado com motorcycle:', motorcycle?.id);
+  
   const [name, setName] = useState(motorcycle?.name || '')
   const [description, setDescription] = useState(motorcycle?.description || '')
   const [price, setPrice] = useState(motorcycle?.price?.toString() || '')
@@ -60,6 +62,24 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     })) || []
   )
   const [previewImages, setPreviewImages] = useState<string[]>([])
+
+  // Monitorar mudanças no prop motorcycle
+  useEffect(() => {
+    console.log('Prop motorcycle alterado:', motorcycle?.id);
+    if (motorcycle) {
+      setName(motorcycle.name);
+      setDescription(motorcycle.description);
+      setPrice(motorcycle.price.toString());
+      setIsSold(motorcycle.isSold);
+      setExistingImages(motorcycle.images);
+      setSelectedColors(
+        motorcycle.colors.map(color => ({
+          name: color.name,
+          hex: color.hex
+        }))
+      );
+    }
+  }, [motorcycle]);
 
   useEffect(() => {
     if (selectedFiles) {

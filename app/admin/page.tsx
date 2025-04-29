@@ -52,6 +52,11 @@ export default function Admin2Page() {
     fetchMotorcycles();
   }, []);
 
+  // Monitorar mudanças nos estados
+  useEffect(() => {
+    console.log('Estado alterado - isFormOpen:', isFormOpen, 'selectedMotorcycle:', selectedMotorcycle?.id);
+  }, [isFormOpen, selectedMotorcycle]);
+
   const handleSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
@@ -117,21 +122,38 @@ export default function Admin2Page() {
     <div className="min-h-screen bg-[#0f1729] text-white p-8">
       <h1 className="text-4xl font-bold mb-8">Administração de Motocicletas</h1>
       
-      {/* Formulário de adição/edição */}
-      <div className="bg-[#1a2234] rounded-lg p-8 mb-8">
-        <h2 className="text-2xl font-bold mb-6">
-          {selectedMotorcycle ? 'Editar Motocicleta' : 'Adicionar Nova Motocicleta'}
-        </h2>
-        <MotorcycleForm
-          motorcycle={selectedMotorcycle}
-          onSubmit={handleSubmit}
-          onCancel={() => {
-            setIsFormOpen(false);
+      {/* Botão para adicionar nova moto */}
+      {!isFormOpen && (
+        <button
+          onClick={() => {
+            console.log('Botão Adicionar clicado');
             setSelectedMotorcycle(undefined);
+            setIsFormOpen(true);
           }}
-          isLoading={isSubmitting}
-        />
-      </div>
+          className="mb-8 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Adicionar Nova Motocicleta
+        </button>
+      )}
+      
+      {/* Formulário de adição/edição */}
+      {isFormOpen && (
+        <div className="bg-[#1a2234] rounded-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-6">
+            {selectedMotorcycle ? 'Editar Motocicleta' : 'Adicionar Nova Motocicleta'}
+          </h2>
+          <MotorcycleForm
+            motorcycle={selectedMotorcycle}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              console.log('Botão Cancelar clicado');
+              setIsFormOpen(false);
+              setSelectedMotorcycle(undefined);
+            }}
+            isLoading={isSubmitting}
+          />
+        </div>
+      )}
 
       {/* Tabela de motocicletas */}
       <div className="bg-[#1a2234] rounded-lg p-8">
@@ -164,6 +186,7 @@ export default function Admin2Page() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
+                          console.log('Botão Ver Detalhes clicado para moto:', motorcycle.id);
                           setSelectedMotorcycle(motorcycle);
                           setIsDetailsOpen(true);
                         }}
@@ -173,8 +196,10 @@ export default function Admin2Page() {
                       </button>
                       <button
                         onClick={() => {
+                          console.log('Botão Editar clicado para moto:', motorcycle.id);
                           setSelectedMotorcycle(motorcycle);
                           setIsFormOpen(true);
+                          console.log('Estado atualizado - selectedMotorcycle:', motorcycle.id, 'isFormOpen:', true);
                         }}
                         className="bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
                       >
@@ -196,7 +221,7 @@ export default function Admin2Page() {
       </div>
 
       {/* Modal de detalhes */}
-      {selectedMotorcycle && (
+      {selectedMotorcycle && isDetailsOpen && (
         <MotorcycleModal
           motorcycle={selectedMotorcycle}
           isOpen={isDetailsOpen}

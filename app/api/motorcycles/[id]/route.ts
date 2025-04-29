@@ -89,14 +89,10 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const formData = await request.formData()
+    const data = await request.json()
     
     // Validar dados obrigatórios
-    const name = formData.get('name')?.toString().trim()
-    const description = formData.get('description')?.toString().trim()
-    const price = formData.get('price')
-    const isSold = formData.get('isSold') === 'true'
-    const colorsJson = formData.get('colors')
+    const { name, description, price, isSold, colors, images } = data
 
     if (!name || !description || !price) {
       return NextResponse.json(
@@ -115,52 +111,38 @@ export async function PUT(
     }
 
     // Validar cores
-    let colors: { name: string; hex: string }[] = []
-    if (colorsJson) {
-      try {
-        colors = JSON.parse(colorsJson.toString())
-        if (!Array.isArray(colors)) {
-          throw new Error('Formato inválido')
-        }
-        for (const color of colors) {
-          if (!color.name || !color.hex || typeof color.name !== 'string' || typeof color.hex !== 'string') {
-            throw new Error('Dados inválidos')
-          }
-        }
-      } catch (error) {
+    if (!Array.isArray(colors)) {
+      return NextResponse.json(
+        { error: 'Formato de cores inválido' },
+        { status: 400 }
+      )
+    }
+
+    for (const color of colors) {
+      if (!color.name || !color.hex || typeof color.name !== 'string' || typeof color.hex !== 'string') {
         return NextResponse.json(
-          { error: 'Formato de cores inválido' },
+          { error: 'Dados de cor inválidos' },
           { status: 400 }
         )
       }
     }
 
     // Processar novas imagens
-    const imageFiles = formData.getAll('images')
     let newImageUrls: string[] = []
 
-    if (imageFiles.length > 0) {
+    if (Array.isArray(images) && images.length > 0) {
       const imageResults = await Promise.all(
-        imageFiles.map(async (file) => {
-          // Converter File para FileData
-          const buffer = await (file as File).arrayBuffer()
-          const base64 = Buffer.from(buffer).toString('base64')
-          const fileData = {
-            base64: `data:${(file as File).type};base64,${base64}`,
-            name: (file as File).name,
-            type: (file as File).type
+        images.map(async (image) => {
+          if (image.base64) {
+            const result = await validateAndProcessImage(image)
+            if (!result.success) {
+              throw new Error(result.error || 'Erro ao processar imagem')
+            }
+            return result
           }
-          return validateAndProcessImage(fileData)
+          return { success: true, url: image.url }
         })
       )
-
-      const failedImages = imageResults.filter(result => !result.success)
-      if (failedImages.length > 0) {
-        return NextResponse.json(
-          { error: failedImages[0].error },
-          { status: 400 }
-        )
-      }
 
       newImageUrls = imageResults
         .filter((result): result is { success: true; url: string } => result.success && !!result.url)
@@ -215,7 +197,7 @@ export async function PUT(
       })
     })
 
-    return NextResponse.json(motorcycle)
+    return NextResponse.json({ data: motorcycle })
   } catch (error) {
     console.error('Erro ao atualizar motocicleta:', error)
     return NextResponse.json(
