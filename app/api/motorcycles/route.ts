@@ -240,8 +240,7 @@ export async function POST(request: NextRequest) {
         },
         images: {
           create: processedImages.map((result, index) => ({
-            url: result.url!,
-            name: validatedData.images[index].name
+            url: result.url!
           }))
         }
       },
