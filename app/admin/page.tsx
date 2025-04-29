@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MotorcycleForm } from '@/app/components/MotorcycleForm';
 import { MotorcycleModal } from '@/app/components/MotorcycleModal';
+import { EditMotorcycleForm } from '@/app/components/EditMotorcycleForm';
 import { Motorcycle, Image as MotorcycleImage, Color as MotorcycleColor } from '@prisma/client';
 
 type MotorcycleWithRelations = Motorcycle & {
@@ -136,14 +137,12 @@ export default function Admin2Page() {
         </button>
       )}
       
-      {/* Formulário de adição/edição */}
-      {isFormOpen && (
+      {/* Formulário de adição */}
+      {isFormOpen && !selectedMotorcycle && (
         <div className="bg-[#1a2234] rounded-lg p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">
-            {selectedMotorcycle ? 'Editar Motocicleta' : 'Adicionar Nova Motocicleta'}
-          </h2>
+          <h2 className="text-2xl font-bold mb-6">Adicionar Nova Motocicleta</h2>
           <MotorcycleForm
-            motorcycle={selectedMotorcycle}
+            motorcycle={undefined}
             onSubmit={handleSubmit}
             onCancel={() => {
               console.log('Botão Cancelar clicado');
@@ -153,6 +152,20 @@ export default function Admin2Page() {
             isLoading={isSubmitting}
           />
         </div>
+      )}
+      
+      {/* Formulário de edição */}
+      {isFormOpen && selectedMotorcycle && (
+        <EditMotorcycleForm
+          motorcycle={selectedMotorcycle}
+          onSubmit={handleSubmit}
+          onCancel={() => {
+            console.log('Botão Cancelar clicado');
+            setIsFormOpen(false);
+            setSelectedMotorcycle(undefined);
+          }}
+          isLoading={isSubmitting}
+        />
       )}
 
       {/* Tabela de motocicletas */}
