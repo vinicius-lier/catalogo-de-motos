@@ -21,6 +21,7 @@
     "mostruario-tablet": "file:",
     "next": "14.1.0",
     "react": "^18",
+    "react-colorful": "^5.6.1",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.50.1",
