@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Motorcycle, Image as MotorcycleImage, Color as MotorcycleColor } from '@prisma/client'
-import { HexColorPicker } from 'react-colorful'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 
 type MotorcycleWithRelations = Motorcycle & {
@@ -51,19 +50,8 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     motorcycle?.images || []
   )
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
-  const availableColors = [
-    { name: 'Vermelho', hex: '#FF0000' },
-    { name: 'Azul', hex: '#0000FF' },
-    { name: 'Preto', hex: '#000000' },
-    { name: 'Branco', hex: '#FFFFFF' },
-    { name: 'Prata', hex: '#C0C0C0' },
-    { name: 'Cinza', hex: '#808080' },
-    { name: 'Verde', hex: '#008000' },
-    { name: 'Amarelo', hex: '#FFFF00' },
-    { name: 'Laranja', hex: '#FFA500' },
-    { name: 'Marrom', hex: '#8B4513' },
-    { name: 'Roxo', hex: '#800080' }
-  ]
+  const [newColorName, setNewColorName] = useState('')
+  const [newColorHex, setNewColorHex] = useState('#000000')
 
   const [selectedColors, setSelectedColors] = useState<FormColor[]>(
     motorcycle?.colors?.map(color => ({
@@ -90,12 +78,16 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     }
   }
 
-  const handleColorToggle = (color: typeof availableColors[0]) => {
-    setSelectedColors(prev => 
-      prev.some(c => c.name === color.name)
-        ? prev.filter(c => c.name !== color.name)
-        : [...prev, { name: color.name, hex: color.hex }]
-    )
+  const handleAddColor = () => {
+    if (newColorName && newColorHex) {
+      setSelectedColors(prev => [...prev, { name: newColorName, hex: newColorHex }])
+      setNewColorName('')
+      setNewColorHex('#000000')
+    }
+  }
+
+  const handleRemoveColor = (index: number) => {
+    setSelectedColors(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -198,8 +190,8 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
-          rows={4}
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
+          rows={4}
         />
       </div>
 
@@ -207,19 +199,80 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
         <label className="block text-sm font-medium text-white mb-2">
           Preço
         </label>
-        <div className="relative mt-1 rounded-md shadow-sm">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-gray-500 sm:text-sm">R$</span>
-          </div>
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+          min="0"
+          step="0.01"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-white mb-2">
+          Status
+        </label>
+        <div className="flex items-center">
           <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            className="block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
-            placeholder="0.00"
-            step="0.01"
+            type="checkbox"
+            checked={isSold}
+            onChange={(e) => setIsSold(e.target.checked)}
+            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
+          <span className="ml-2 text-white">Vendida</span>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-white mb-2">
+          Cores
+        </label>
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newColorName}
+              onChange={(e) => setNewColorName(e.target.value)}
+              placeholder="Nome da cor"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-black bg-white"
+            />
+            <input
+              type="color"
+              value={newColorHex}
+              onChange={(e) => setNewColorHex(e.target.value)}
+              className="h-10 w-20 rounded-md border-gray-300"
+            />
+            <button
+              type="button"
+              onClick={handleAddColor}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              Adicionar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedColors.map((color, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 bg-gray-700 rounded-md px-3 py-2"
+              >
+                <div
+                  className="w-6 h-6 rounded-full"
+                  style={{ backgroundColor: color.hex }}
+                />
+                <span className="text-white">{color.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveColor(index)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -227,120 +280,44 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
         <label className="block text-sm font-medium text-white mb-2">
           Imagens
         </label>
-        {existingImages.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            {existingImages.map((img, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                <Image
-                  src={img.url}
-                  alt={`Moto ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveExistingImage(index)}
-                  className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {previewImages.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="space-y-4">
+          <input
+            type="file"
+            onChange={handleImageChange}
+            accept="image/*"
+            multiple
+            className="block w-full text-white"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {previewImages.map((preview, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
+              <div key={index} className="relative">
                 <Image
                   src={preview}
-                  alt={`Nova imagem ${index + 1}`}
-                  fill
-                  className="object-cover"
+                  alt={`Preview ${index + 1}`}
+                  width={200}
+                  height={200}
+                  className="rounded-lg object-cover"
                 />
               </div>
             ))}
           </div>
-        )}
-        
-        <input
-          type="file"
-          onChange={handleImageChange}
-          multiple
-          accept="image/*"
-          className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-indigo-50 file:text-indigo-700
-            hover:file:bg-indigo-100"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-white mb-2">
-          Cores Disponíveis
-        </label>
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          {availableColors.map((color) => (
-            <button
-              key={color.name}
-              type="button"
-              onClick={() => handleColorToggle(color)}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2
-                ${selectedColors.some(c => c.name === color.name)
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                }`}
-            >
-              <span 
-                className="w-4 h-4 rounded-full border border-gray-300" 
-                style={{ backgroundColor: color.hex }}
-              />
-              {color.name}
-            </button>
-          ))}
         </div>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex justify-end gap-4">
         <button
           type="button"
-          onClick={() => setIsSold(!isSold)}
-          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-            isSold ? 'bg-indigo-600' : 'bg-gray-200'
-          }`}
-          role="switch"
-          aria-checked={isSold}
+          onClick={onCancel}
+          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
         >
-          <span
-            aria-hidden="true"
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-              isSold ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
+          Cancelar
         </button>
-        <span className="ml-3 text-sm font-medium text-white">
-          Marcar como vendida
-        </span>
-      </div>
-
-      <div>
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            isLoading
-              ? 'bg-indigo-400 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-          }`}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
         >
-          {isLoading
-            ? 'Salvando...'
-            : motorcycle
-            ? 'Atualizar Moto'
-            : 'Cadastrar Moto'}
+          {isLoading ? 'Salvando...' : 'Salvar'}
         </button>
       </div>
     </form>
