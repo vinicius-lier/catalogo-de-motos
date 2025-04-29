@@ -16,6 +16,7 @@
     "@heroicons/react": "^2.1.1",
     "@prisma/client": "^5.10.2",
     "@radix-ui/react-dialog": "^1.0.5",
+    "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
     "mostruario-tablet": "file:",
     "next": "14.1.0",
@@ -24,10 +25,11 @@
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.50.1",
     "sharp": "^0.33.2",
+    "tailwind-merge": "^2.2.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^4.41.3",
+    "@netlify/plugin-nextjs": "^5.10.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
