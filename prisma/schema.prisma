@@ -10,34 +10,43 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
+  password  String   @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
 }
 
 model Motorcycle {
   id          String   @id @default(uuid())
-  name        String
-  description String
+  name        String   @db.VarChar(100)
+  description String   @db.Text
   price       Float
   isSold      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   colors      Color[]
   images      Image[]
+
+  @@index([name])
+  @@index([isSold])
 }
 
 model Image {
   id           String     @id @default(uuid())
-  url          String
+  url          String     @db.Text
   motorcycleId String
   motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@index([motorcycleId])
 }
 
 model Color {
   id           String     @id @default(uuid())
-  name         String
-  hex          String
+  name         String     @db.VarChar(50)
+  hex          String     @db.VarChar(7)
   motorcycleId String
   motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+
+  @@index([motorcycleId])
 }

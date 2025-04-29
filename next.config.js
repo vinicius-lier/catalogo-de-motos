@@ -4,11 +4,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
-      },
+        hostname: 'res.cloudinary.com',
+      }
     ],
-    unoptimized: true,
-    domains: ['localhost', 'res.cloudinary.com']
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
   output: 'standalone',
   webpack: (config) => {
