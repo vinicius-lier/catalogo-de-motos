@@ -15,12 +15,15 @@
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
     "@prisma/client": "^5.10.2",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "lucide-react": "^0.344.0",
     "mostruario-tablet": "file:",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.50.1",
+    "sharp": "^0.33.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
