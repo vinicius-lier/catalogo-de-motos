@@ -3,28 +3,25 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import type { Motorcycle } from '@prisma/client'
+import { Motorcycle, Image as MotorcycleImage, Color as MotorcycleColor } from '@prisma/client'
 import { HexColorPicker } from 'react-colorful'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 
-interface MotorcycleImage {
-  url: string
-  id?: string
+type MotorcycleWithRelations = Motorcycle & {
+  images: MotorcycleImage[];
+  colors: MotorcycleColor[];
+};
+
+// Tipos específicos para o formulário
+interface FormColor {
+  name: string;
+  hex: string;
 }
 
-interface MotorcycleColor {
-  name: string
-  id?: string
-  hex: string
-}
-
-interface MotorcycleWithRelations {
-  name: string
-  description: string
-  price: number
-  isSold: boolean
-  images: MotorcycleImage[]
-  colors: MotorcycleColor[]
+interface FormImage {
+  base64: string;
+  name: string;
+  type: string;
 }
 
 interface MotorcycleFormProps {
@@ -59,10 +56,10 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     { name: 'Roxo', hex: '#800080' }
   ]
 
-  const [selectedColors, setSelectedColors] = useState<MotorcycleColor[]>(
+  const [selectedColors, setSelectedColors] = useState<FormColor[]>(
     motorcycle?.colors?.map(color => ({
       name: color.name,
-      hex: color.hex || availableColors.find(c => c.name === color.name)?.hex || '#000000'
+      hex: color.hex
     })) || []
   )
   const [previewImages, setPreviewImages] = useState<string[]>([])
@@ -105,7 +102,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     try {
       console.log('Convertendo imagens para base64...')
       const imagePromises = selectedFiles ? Array.from(selectedFiles).map(file => {
-        return new Promise<{ base64: string; name: string; type: string }>((resolve, reject) => {
+        return new Promise<FormImage>((resolve, reject) => {
           console.log('Processando imagem:', file.name)
           const reader = new FileReader()
           reader.onload = () => {
@@ -127,30 +124,36 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       const images = await Promise.all(imagePromises)
       console.log(`${images.length} imagens processadas com sucesso`)
 
-      const data = {
+      const formData = {
         name,
         description,
         price: Number(price),
+        isSold,
         colors: selectedColors,
-        images
+        images: [
+          ...existingImages.map(img => ({
+            url: img.url
+          })),
+          ...images
+        ]
       }
 
       console.log('Dados a serem enviados:', {
-        ...data,
-        images: data.images.map(img => ({
-          name: img.name,
-          type: img.type,
-          size: Math.round(img.base64.length * 0.75) // Estimativa do tamanho em bytes
+        ...formData,
+        images: formData.images.map(img => ({
+          name: 'base64' in img ? img.name : img.url,
+          type: 'base64' in img ? img.type : 'image/jpeg',
+          size: 'base64' in img ? Math.round(img.base64.length * 0.75) : 0
         }))
       })
 
       console.log('Enviando requisição para a API...')
-      const response = await fetch('/api/motorcycles', {
-        method: 'POST',
+      const response = await fetch(motorcycle ? `/api/motorcycles/${motorcycle.id}` : '/api/motorcycles', {
+        method: motorcycle ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(formData)
       })
 
       console.log('Status da resposta:', response.status)
@@ -170,7 +173,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       }
 
       console.log('Motocicleta salva com sucesso:', responseData)
-      await onSubmit(data)
+      await onSubmit(formData)
     } catch (error) {
       console.error('Erro detalhado:', {
         name: error instanceof Error ? error.name : 'Unknown',
