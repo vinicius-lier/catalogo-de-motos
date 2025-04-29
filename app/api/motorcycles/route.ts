@@ -198,78 +198,71 @@ export async function POST(request: NextRequest) {
       images: data.images?.map((img: any) => ({
         name: img.name,
         type: img.type,
-        size: img.base64?.length || 0
+        size: Math.round(img.base64.length * 0.75) // Estimativa do tamanho em bytes
       }))
     })
-    
-    // Validar dados
-    console.log('Validando dados...')
+
+    // Validar dados com Zod
     const validationResult = motorcycleSchema.safeParse(data)
     if (!validationResult.success) {
       console.error('Erro de validação:', validationResult.error)
       return NextResponse.json(
-        { error: 'Dados inválidos', details: validationResult.error.errors },
+        { error: 'Dados inválidos: ' + validationResult.error.message },
         { status: 400 }
       )
     }
-    console.log('Dados validados com sucesso')
-
-    const { images, ...motorcycleData } = validationResult.data
 
     // Processar imagens
     console.log('Processando imagens...')
     const processedImages = await Promise.all(
-      images.map(async (image: ImageData, index: number) => {
-        console.log(`Processando imagem ${index + 1}/${images.length}`)
+      data.images.map(async (image: ImageData) => {
         const result = await validateAndProcessImage(image)
-        if (!result.success || !result.url) {
-          console.error(`Erro ao processar imagem ${index + 1}:`, result.error)
-          throw new Error(result.error || 'Erro ao processar imagem')
+        if (!result.success) {
+          throw new Error(`Erro ao processar imagem ${image.name}: ${result.error}`)
         }
-        console.log(`Imagem ${index + 1} processada com sucesso`)
-        return result.url
+        return result
       })
     )
-    console.log('Todas as imagens processadas com sucesso')
 
-    // Criar registro no banco
-    console.log('Criando registro no banco...')
+    // Criar motocicleta no banco
+    console.log('Criando motocicleta no banco...')
     const motorcycle = await prisma.motorcycle.create({
       data: {
-        name: motorcycleData.name,
-        description: motorcycleData.description,
-        price: motorcycleData.price,
-        isSold: false,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        isSold: data.isSold || false,
         colors: {
-          create: motorcycleData.colors
+          create: data.colors.map((color: Color) => ({
+            name: color.name,
+            hex: color.hex
+          }))
         },
         images: {
-          create: processedImages.map(url => ({ url }))
+          create: processedImages.map((result, index) => ({
+            url: result.url!,
+            name: data.images[index].name
+          }))
         }
       },
       include: {
-        images: true,
-        colors: true
+        colors: true,
+        images: true
       }
     })
-    console.log('Registro criado com sucesso:', motorcycle)
 
-    return NextResponse.json(motorcycle)
+    console.log('Motocicleta criada com sucesso:', motorcycle)
+    return NextResponse.json({ data: motorcycle })
+
   } catch (error) {
-    console.error('Erro detalhado na rota POST:', {
+    console.error('Erro detalhado ao criar motocicleta:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Erro desconhecido',
-      stack: error instanceof Error ? error.stack : undefined,
-      code: error instanceof Error ? (error as any).code : undefined,
-      meta: error instanceof Error ? (error as any).meta : undefined
+      stack: error instanceof Error ? error.stack : undefined
     })
     
     return NextResponse.json(
-      { 
-        error: 'Erro ao criar moto', 
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
-      },
+      { error: 'Erro ao criar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
       { status: 500 }
     )
   } finally {

@@ -16,28 +16,28 @@ model User {
 }
 
 model Motorcycle {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String
   price       Float
-  isSold      Boolean   @default(false)
-  images      Image[]
+  isSold      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   colors      Color[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  images      Image[]
 }
 
 model Image {
   id           String     @id @default(uuid())
   url          String
-  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
   motorcycleId String
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
 }
 
 model Color {
   id           String     @id @default(uuid())
   name         String
   hex          String
-  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
   motorcycleId String
-} 
+  motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+}

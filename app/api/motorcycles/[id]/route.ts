@@ -141,7 +141,17 @@ export async function PUT(
 
     if (imageFiles.length > 0) {
       const imageResults = await Promise.all(
-        imageFiles.map(file => validateAndProcessImage(file as File))
+        imageFiles.map(async (file) => {
+          // Converter File para FileData
+          const buffer = await (file as File).arrayBuffer()
+          const base64 = Buffer.from(buffer).toString('base64')
+          const fileData = {
+            base64: `data:${(file as File).type};base64,${base64}`,
+            name: (file as File).name,
+            type: (file as File).type
+          }
+          return validateAndProcessImage(fileData)
+        })
       )
 
       const failedImages = imageResults.filter(result => !result.success)
