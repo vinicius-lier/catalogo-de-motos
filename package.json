@@ -1,5 +1,5 @@
 {
-  "name": "catalogo-motos",
+  "name": "mostruario-tablet",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,64 +9,37 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
+    "prisma:seed": "prisma db seed"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
-    "@prisma/client": "^5.10.0",
-    "@radix-ui/react-dialog": "^1.1.11",
-    "@types/sharp": "^0.31.1",
-    "catalogo-motos": "file:",
-    "clsx": "^2.1.1",
-    "core-js": "^3.41.0",
-    "lucide-react": "^0.503.0",
+    "@prisma/client": "^5.10.2",
+    "mostruario-tablet": "file:",
     "next": "14.1.0",
-    "next-auth": "^4.24.5",
-    "react": "^18.2.0",
-    "react-colorful": "^5.6.1",
-    "react-dom": "^18.2.0",
-    "react-hot-toast": "^2.4.1",
-    "swiper": "^11.2.6",
-    "tailwind-merge": "^3.2.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-dropzone": "^14.2.3",
+    "react-hook-form": "^7.50.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "*",
-    "@types/node": "^20.17.31",
-    "@types/react": "^18.2.57",
-    "@types/react-dom": "^18.2.19",
-    "autoprefixer": "^10.4.21",
-    "eslint": "^8.56.0",
+    "@netlify/plugin-nextjs": "^4.41.3",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
     "eslint-config-next": "14.1.0",
-    "postcss": "^8.5.3",
-    "prisma": "^5.10.0",
-    "tailwindcss": "^3.4.17",
-    "ts-node": "^10.9.2",
-    "typescript": "~5.3.3"
+    "postcss": "^8",
+    "prisma": "^5.10.2",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
   },
-  "overrides": {
-    "sharp": {
-      "platform": "win32",
-      "arch": "x64"
-    }
-  },
-  "resolutions": {
-    "sharp": "^0.34.1"
-  },
-  "optionalDependencies": {
-    "sharp": "^0.34.1"
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "config": {
-    "sharp": {
-      "platform": "win32",
-      "arch": "x64"
-    }
   }
 }
