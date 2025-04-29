@@ -12,11 +12,20 @@ type MotorcycleWithRelations = Motorcycle & {
   colors: MotorcycleColor[];
 };
 
+interface FormData {
+  name: string;
+  description: string;
+  price: number;
+  isSold: boolean;
+  colors: { name: string; hex: string; }[];
+  images: { url: string; }[];
+}
+
 export default function Admin2Page() {
   const router = useRouter();
   const [motorcycles, setMotorcycles] = useState<MotorcycleWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMotorcycle, setSelectedMotorcycle] = useState<MotorcycleWithRelations | null>(null);
+  const [selectedMotorcycle, setSelectedMotorcycle] = useState<MotorcycleWithRelations | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,7 +57,10 @@ export default function Admin2Page() {
       
       const response = await fetch(url, {
         method,
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -57,7 +69,7 @@ export default function Admin2Page() {
 
       await fetchMotorcycles();
       setIsFormOpen(false);
-      setSelectedMotorcycle(null);
+      setSelectedMotorcycle(undefined);
     } catch (error) {
       console.error('Erro ao salvar moto:', error);
       alert('Erro ao salvar moto. Por favor, tente novamente.');
@@ -109,7 +121,7 @@ export default function Admin2Page() {
           onSubmit={handleSubmit}
           onCancel={() => {
             setIsFormOpen(false);
-            setSelectedMotorcycle(null);
+            setSelectedMotorcycle(undefined);
           }}
           isLoading={isSubmitting}
         />
