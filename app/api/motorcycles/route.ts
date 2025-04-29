@@ -88,6 +88,7 @@ const motorcycleSchema = z.object({
   name: z.string(),
   description: z.string(),
   price: z.number(),
+  isSold: z.boolean().optional().default(false),
   colors: z.array(z.object({
     name: z.string(),
     hex: z.string()
@@ -178,9 +179,6 @@ export async function POST(request: NextRequest) {
       console.log('Testando conexão com o banco...')
       await prisma.$connect()
       console.log('Conexão com o banco estabelecida com sucesso')
-      
-      const count = await prisma.motorcycle.count()
-      console.log('Total de motos no banco:', count)
     } catch (dbError) {
       console.error('Erro ao conectar com o banco:', {
         name: dbError instanceof Error ? dbError.name : 'Unknown',
@@ -212,10 +210,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const validatedData = validationResult.data
+
     // Processar imagens
     console.log('Processando imagens...')
     const processedImages = await Promise.all(
-      data.images.map(async (image: ImageData) => {
+      validatedData.images.map(async (image) => {
         const result = await validateAndProcessImage(image)
         if (!result.success) {
           throw new Error(`Erro ao processar imagem ${image.name}: ${result.error}`)
@@ -228,12 +228,12 @@ export async function POST(request: NextRequest) {
     console.log('Criando motocicleta no banco...')
     const motorcycle = await prisma.motorcycle.create({
       data: {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        isSold: data.isSold || false,
+        name: validatedData.name,
+        description: validatedData.description,
+        price: validatedData.price,
+        isSold: validatedData.isSold,
         colors: {
-          create: data.colors.map((color: Color) => ({
+          create: validatedData.colors.map((color) => ({
             name: color.name,
             hex: color.hex
           }))
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
         images: {
           create: processedImages.map((result, index) => ({
             url: result.url!,
-            name: data.images[index].name
+            name: validatedData.images[index].name
           }))
         }
       },

@@ -24,9 +24,18 @@ interface FormImage {
   type: string;
 }
 
+interface FormData {
+  name: string;
+  description: string;
+  price: number;
+  isSold: boolean;
+  colors: { name: string; hex: string; }[];
+  images: FormImage[];
+}
+
 interface MotorcycleFormProps {
   motorcycle?: MotorcycleWithRelations
-  onSubmit: (data: any) => Promise<void>
+  onSubmit: (data: FormData) => Promise<void>
   onCancel: () => void
   isLoading: boolean
 }
@@ -124,7 +133,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       const images = await Promise.all(imagePromises)
       console.log(`${images.length} imagens processadas com sucesso`)
 
-      const formData = {
+      const formData: FormData = {
         name,
         description,
         price: Number(price),
@@ -132,54 +141,31 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
         colors: selectedColors,
         images: [
           ...existingImages.map(img => ({
-            url: img.url
+            base64: img.url,
+            name: `existing-${img.url.split('/').pop()}`,
+            type: 'image/webp'
           })),
-          ...images
+          ...images.map(img => ({
+            base64: img.base64,
+            name: img.name,
+            type: img.type
+          }))
         ]
       }
 
       console.log('Dados a serem enviados:', {
         ...formData,
         images: formData.images.map(img => ({
-          name: 'base64' in img ? img.name : img.url,
-          type: 'base64' in img ? img.type : 'image/jpeg',
-          size: 'base64' in img ? Math.round(img.base64.length * 0.75) : 0
+          base64: img.base64.substring(0, 100) + '...' // Log parcial para não sobrecarregar o console
         }))
       })
 
-      console.log('Enviando requisição para a API...')
-      const response = await fetch(motorcycle ? `/api/motorcycles/${motorcycle.id}` : '/api/motorcycles', {
-        method: motorcycle ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-
-      console.log('Status da resposta:', response.status)
-      const responseText = await response.text()
-      console.log('Resposta completa:', responseText)
-      
-      let responseData
-      try {
-        responseData = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('Erro ao fazer parse da resposta:', parseError)
-        throw new Error('Erro ao processar resposta do servidor')
-      }
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Erro ao salvar a motocicleta')
-      }
-
-      console.log('Motocicleta salva com sucesso:', responseData)
       await onSubmit(formData)
     } catch (error) {
       console.error('Erro detalhado:', {
         name: error instanceof Error ? error.name : 'Unknown',
         message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        response: error instanceof Error ? (error as any).response : undefined
+        stack: error instanceof Error ? error.stack : undefined
       })
       alert(error instanceof Error ? error.message : 'Erro ao salvar a motocicleta. Por favor, tente novamente.')
     }
