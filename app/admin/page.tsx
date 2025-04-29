@@ -12,13 +12,19 @@ type MotorcycleWithRelations = Motorcycle & {
   colors: MotorcycleColor[];
 };
 
+interface FormImage {
+  base64: string;
+  name: string;
+  type: string;
+}
+
 interface FormData {
   name: string;
   description: string;
   price: number;
   isSold: boolean;
   colors: { name: string; hex: string; }[];
-  images: { url: string; }[];
+  images: FormImage[];
 }
 
 export default function Admin2Page() {
