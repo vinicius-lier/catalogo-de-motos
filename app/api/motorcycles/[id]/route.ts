@@ -111,13 +111,22 @@ export async function PUT(
     }
 
     const data = await request.json()
+    console.log('Dados recebidos:', {
+      ...data,
+      images: data.images?.map((img: any) => ({
+        name: img.name,
+        type: img.type,
+        hasBase64: !!img.base64,
+        hasUrl: !!img.url
+      }))
+    })
     
     // Validar dados obrigatórios
     const { name, description, price, isSold, colors, images } = data
 
     if (!name || !description || !price) {
       return NextResponse.json(
-        { error: 'Dados obrigatórios faltando' },
+        { error: 'Dados obrigatórios faltando: nome, descrição e preço são necessários' },
         { status: 400 }
       )
     }
@@ -126,7 +135,7 @@ export async function PUT(
     const priceNumber = Number(price)
     if (isNaN(priceNumber) || priceNumber <= 0) {
       return NextResponse.json(
-        { error: 'Preço inválido' },
+        { error: 'Preço inválido: deve ser um número maior que zero' },
         { status: 400 }
       )
     }
@@ -134,7 +143,7 @@ export async function PUT(
     // Validar cores
     if (!Array.isArray(colors)) {
       return NextResponse.json(
-        { error: 'Formato de cores inválido' },
+        { error: 'Formato de cores inválido: deve ser um array' },
         { status: 400 }
       )
     }
@@ -142,10 +151,18 @@ export async function PUT(
     for (const color of colors) {
       if (!color.name || !color.hex || typeof color.name !== 'string' || typeof color.hex !== 'string') {
         return NextResponse.json(
-          { error: 'Dados de cor inválidos' },
+          { error: 'Dados de cor inválidos: nome e hex são obrigatórios' },
           { status: 400 }
         )
       }
+    }
+
+    // Validar imagens
+    if (!Array.isArray(images)) {
+      return NextResponse.json(
+        { error: 'Formato de imagens inválido: deve ser um array' },
+        { status: 400 }
+      )
     }
 
     // Separar imagens existentes e novas
@@ -184,65 +201,76 @@ export async function PUT(
           .map(result => result.url!)
       } catch (error) {
         console.error('Erro ao processar novas imagens:', error)
-        throw new Error('Erro ao processar imagens: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
+        return NextResponse.json(
+          { error: 'Erro ao processar imagens: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
+          { status: 400 }
+        )
       }
     }
 
     // Atualizar moto no banco com transaction
-    const motorcycle = await prisma.$transaction(async (tx) => {
-      // Atualizar moto
-      const moto = await tx.motorcycle.update({
-        where: { id: context.params.id },
-        data: {
-          name,
-          description,
-          price: priceNumber,
-          isSold
-        }
-      })
-
-      // Atualizar cores
-      await tx.color.deleteMany({
-        where: { motorcycleId: moto.id }
-      })
-
-      if (colors.length > 0) {
-        await tx.color.createMany({
-          data: colors.map(color => ({
-            name: color.name,
-            hex: color.hex,
-            motorcycleId: moto.id
-          }))
+    try {
+      const motorcycle = await prisma.$transaction(async (tx) => {
+        // Atualizar moto
+        const moto = await tx.motorcycle.update({
+          where: { id: context.params.id },
+          data: {
+            name,
+            description,
+            price: priceNumber,
+            isSold
+          }
         })
-      }
 
-      // Atualizar imagens
-      await tx.image.deleteMany({
-        where: { motorcycleId: moto.id }
-      })
-
-      // Adicionar imagens existentes e novas
-      const allImageUrls = [...existingImageUrls, ...newImageUrls]
-      if (allImageUrls.length > 0) {
-        await tx.image.createMany({
-          data: allImageUrls.map(url => ({
-            url,
-            motorcycleId: moto.id
-          }))
+        // Atualizar cores
+        await tx.color.deleteMany({
+          where: { motorcycleId: moto.id }
         })
-      }
 
-      // Retornar moto com relacionamentos
-      return tx.motorcycle.findUnique({
-        where: { id: moto.id },
-        include: {
-          images: true,
-          colors: true
+        if (colors.length > 0) {
+          await tx.color.createMany({
+            data: colors.map(color => ({
+              name: color.name,
+              hex: color.hex,
+              motorcycleId: moto.id
+            }))
+          })
         }
-      })
-    })
 
-    return NextResponse.json({ data: motorcycle })
+        // Atualizar imagens
+        await tx.image.deleteMany({
+          where: { motorcycleId: moto.id }
+        })
+
+        // Adicionar imagens existentes e novas
+        const allImageUrls = [...existingImageUrls, ...newImageUrls]
+        if (allImageUrls.length > 0) {
+          await tx.image.createMany({
+            data: allImageUrls.filter((url): url is string => !!url).map(url => ({
+              url,
+              motorcycleId: moto.id
+            }))
+          })
+        }
+
+        // Retornar moto com relacionamentos
+        return tx.motorcycle.findUnique({
+          where: { id: moto.id },
+          include: {
+            images: true,
+            colors: true
+          }
+        })
+      })
+
+      return NextResponse.json({ data: motorcycle })
+    } catch (error) {
+      console.error('Erro na transaction:', error)
+      return NextResponse.json(
+        { error: 'Erro ao atualizar motocicleta no banco de dados: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('Erro detalhado ao atualizar motocicleta:', {
       name: error instanceof Error ? error.name : 'Unknown',

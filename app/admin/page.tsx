@@ -76,8 +76,10 @@ export default function Admin2Page() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erro ao salvar moto');
+        throw new Error(data.error || 'Erro ao salvar moto');
       }
 
       await fetchMotorcycles();
@@ -85,7 +87,7 @@ export default function Admin2Page() {
       setSelectedMotorcycle(undefined);
     } catch (error) {
       console.error('Erro ao salvar moto:', error);
-      alert('Erro ao salvar moto. Por favor, tente novamente.');
+      alert(error instanceof Error ? error.message : 'Erro ao salvar moto. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
