@@ -97,6 +97,7 @@ export default function Admin2Page() {
           statusText: response.statusText,
           data
         });
+        alert('Erro detalhado da API:\n' + JSON.stringify(data, null, 2));
         throw new Error(data.error || `Erro ao salvar moto: ${response.status} ${response.statusText}`);
       }
 

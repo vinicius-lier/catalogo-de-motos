@@ -275,11 +275,15 @@ export async function PUT(
     console.error('Erro detalhado ao atualizar motocicleta:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Erro desconhecido',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      detalhes: error
     })
     
     return NextResponse.json(
-      { error: 'Erro ao atualizar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
+      {
+        error: 'Erro ao atualizar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido'),
+        detalhes: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error
+      },
       { status: 500 }
     )
   }

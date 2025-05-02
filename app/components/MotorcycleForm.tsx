@@ -40,6 +40,22 @@ interface MotorcycleFormProps {
   isLoading: boolean
 }
 
+// Função para upload no Cloudinary
+async function uploadToCloudinary(file: File): Promise<string> {
+  const url = 'https://api.cloudinary.com/v1_1/dvm0gqnpm/image/upload';
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'catalogo de motos');
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await response.json();
+  if (!data.secure_url) throw new Error('Erro ao fazer upload para Cloudinary');
+  return data.secure_url;
+}
+
 export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: MotorcycleFormProps) {
   const router = useRouter()
   console.log('MotorcycleForm renderizado com motorcycle:', motorcycle?.id);
@@ -115,7 +131,6 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     e.preventDefault()
     console.log('=== Iniciando submissão do formulário ===')
 
-    // Verificar se é uma edição ou criação
     if (!motorcycle && !selectedFiles && existingImages.length === 0) {
       console.error('Nenhuma imagem selecionada')
       alert('Por favor, selecione pelo menos uma imagem')
@@ -123,29 +138,17 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     }
 
     try {
-      console.log('Convertendo imagens para base64...')
-      const imagePromises = selectedFiles ? Array.from(selectedFiles).map(file => {
-        return new Promise<FormImage>((resolve, reject) => {
-          console.log('Processando imagem:', file.name)
-          const reader = new FileReader()
-          reader.onload = () => {
-            console.log('Imagem convertida com sucesso:', file.name)
-            resolve({
-              base64: reader.result as string,
-              name: file.name,
-              type: file.type
-            })
-          }
-          reader.onerror = (error) => {
-            console.error('Erro ao converter imagem:', file.name, error)
-            reject(new Error(`Erro ao converter imagem ${file.name}: ${error}`))
-          }
-          reader.readAsDataURL(file)
-        })
-      }) : []
-
-      const images = await Promise.all(imagePromises)
-      console.log(`${images.length} imagens processadas com sucesso`)
+      let uploadedImageUrls: string[] = [];
+      if (selectedFiles) {
+        console.log('Fazendo upload das imagens para o Cloudinary...');
+        const uploadPromises = Array.from(selectedFiles).map(async (file) => {
+          const url = await uploadToCloudinary(file);
+          console.log('Imagem enviada para Cloudinary:', url);
+          return url;
+        });
+        uploadedImageUrls = await Promise.all(uploadPromises);
+        console.log(`${uploadedImageUrls.length} imagens enviadas com sucesso para o Cloudinary`);
+      }
 
       // Validar dados do formulário
       if (!name.trim()) {
@@ -173,10 +176,10 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
             name: `existing-${img.url.split('/').pop()}`,
             type: 'image/webp'
           })),
-          ...images.map(img => ({
-            base64: img.base64,
-            name: img.name,
-            type: img.type
+          ...uploadedImageUrls.map((url, idx) => ({
+            url,
+            name: selectedFiles ? selectedFiles[idx].name : `imagem-${idx+1}`,
+            type: selectedFiles ? selectedFiles[idx].type : 'image'
           }))
         ]
       }
@@ -184,7 +187,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       console.log('Dados a serem enviados:', {
         ...formData,
         images: formData.images.map(img => ({
-          base64: img.base64 ? img.base64.substring(0, 100) + '...' : 'url: ' + img.url,
+          url: img.url,
           name: img.name,
           type: img.type
         }))
