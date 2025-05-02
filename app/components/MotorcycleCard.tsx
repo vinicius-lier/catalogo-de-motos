@@ -102,7 +102,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
 
             <div className="modal-image">
               <Image
-                src={motorcycle.images[currentImageIndex]?.url || '/placeholder.jpg'}
+                src={motorcycle.images[currentImageIndex]?.base64 || '/placeholder.jpg'}
                 alt={motorcycle.name}
                 fill
                 className="object-cover"
