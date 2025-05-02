@@ -24,7 +24,7 @@ export default function MotorcycleCard({ motorcycle, onDetailsClick }: Motorcycl
     setImageError(true)
   }
 
-  const imageUrl = motorcycle.images[0]?.url || '/placeholder.jpg'
+  const imageUrl = motorcycle.images[0]?.base64 || '/placeholder.jpg'
   const isDataUrl = imageUrl.startsWith('data:')
 
   const formatPrice = (price: number) => {
