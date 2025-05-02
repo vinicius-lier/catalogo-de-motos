@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { validateAndProcessImage } from '@/app/utils/imageValidation'
+import type { FileData } from '@/app/utils/imageValidation'
 
 interface ImageData {
   url?: string;
@@ -160,8 +161,13 @@ export async function PUT(
 
     if (newImages.length > 0) {
       const imageResults = await Promise.all(
-        newImages.map(async (image) => {
-          const result = await validateAndProcessImage(image)
+        newImages.map(async (image: ImageData) => {
+          const fileData: FileData = {
+            base64: image.base64!,
+            type: image.type,
+            name: image.name
+          }
+          const result = await validateAndProcessImage(fileData)
           if (!result.success) {
             throw new Error(result.error || 'Erro ao processar imagem')
           }

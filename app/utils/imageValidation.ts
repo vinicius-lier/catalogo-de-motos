@@ -6,7 +6,7 @@ const MAX_WIDTH = 1200
 const MAX_HEIGHT = 800
 const OUTPUT_QUALITY = 80
 
-interface FileData {
+export interface FileData {
   base64: string
   type: string
   name: string
