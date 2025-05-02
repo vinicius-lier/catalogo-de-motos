@@ -68,19 +68,6 @@ export default function Admin2Page() {
       
       const method = selectedMotorcycle ? 'PUT' : 'POST';
       
-      console.log('Enviando requisição:', {
-        url,
-        method,
-        data: {
-          ...formData,
-          images: formData.images.map(img => ({
-            base64: img.base64 ? img.base64.substring(0, 100) + '...' : 'url: ' + img.url,
-            name: img.name,
-            type: img.type
-          }))
-        }
-      });
-
       const response = await fetch(url, {
         method,
         headers: {
@@ -89,28 +76,29 @@ export default function Admin2Page() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Erro na resposta:', {
-          status: response.status,
-          statusText: response.statusText,
-          data
-        });
-        alert('Erro detalhado da API:\n' + JSON.stringify(data, null, 2));
-        throw new Error(data.error || `Erro ao salvar moto: ${response.status} ${response.statusText}`);
+      // Tenta ler como JSON, se falhar, lê como texto puro
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
       }
 
-      console.log('Moto salva com sucesso:', data);
+      if (!response.ok) {
+        // Se for texto puro, mostra tudo
+        if (typeof data === 'string') {
+          alert('Erro detalhado do backend:\n' + data);
+        } else {
+          alert('Erro detalhado da API:\n' + JSON.stringify(data, null, 2));
+        }
+        throw new Error((data && data.error) || 'Erro ao salvar moto');
+      }
+
       await fetchMotorcycles();
       setIsFormOpen(false);
       setSelectedMotorcycle(undefined);
     } catch (error) {
-      console.error('Erro ao salvar moto:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('Erro ao salvar moto:', error);
       alert(error instanceof Error ? error.message : 'Erro ao salvar moto. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);

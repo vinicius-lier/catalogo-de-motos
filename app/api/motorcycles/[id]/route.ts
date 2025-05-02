@@ -166,47 +166,8 @@ export async function PUT(
     }
 
     // Separar imagens existentes e novas
-    const existingImageUrls = images
-      .filter((img: ImageData) => img.url && !img.base64)
-      .map((img: ImageData) => img.url)
-
-    const newImages = images
-      .filter((img: ImageData) => img.base64)
-
-    // Processar novas imagens
-    let newImageUrls: string[] = []
-
-    if (newImages.length > 0) {
-      try {
-        const imageResults = await Promise.all(
-          newImages.map(async (image: ImageData) => {
-            if (!image.base64) {
-              throw new Error('Base64 não encontrado para imagem')
-            }
-            const fileData: FileData = {
-              base64: image.base64,
-              type: image.type,
-              name: image.name
-            }
-            const result = await validateAndProcessImage(fileData)
-            if (!result.success) {
-              throw new Error(result.error || 'Erro ao processar imagem')
-            }
-            return result
-          })
-        )
-
-        newImageUrls = imageResults
-          .filter((result): result is { success: true; url: string } => result.success && !!result.url)
-          .map(result => result.url!)
-      } catch (error) {
-        console.error('Erro ao processar novas imagens:', error)
-        return NextResponse.json(
-          { error: 'Erro ao processar imagens: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
-          { status: 400 }
-        )
-      }
-    }
+    // Agora, todas as imagens vêm como URLs (Cloudinary), então basta coletar as URLs
+    const allImageUrls = images.map((img: ImageData) => img.url).filter(Boolean)
 
     // Atualizar moto no banco com transaction
     try {
@@ -242,8 +203,7 @@ export async function PUT(
           where: { motorcycleId: moto.id }
         })
 
-        // Adicionar imagens existentes e novas
-        const allImageUrls = [...existingImageUrls, ...newImageUrls]
+        // Adicionar imagens (apenas URLs)
         if (allImageUrls.length > 0) {
           await tx.image.createMany({
             data: allImageUrls.filter((url): url is string => !!url).map(url => ({
@@ -272,19 +232,15 @@ export async function PUT(
       )
     }
   } catch (error) {
-    console.error('Erro detalhado ao atualizar motocicleta:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Erro desconhecido',
-      stack: error instanceof Error ? error.stack : undefined,
-      detalhes: error
-    })
-    
-    return NextResponse.json(
-      {
-        error: 'Erro ao atualizar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido'),
-        detalhes: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error
-      },
+    // Força o retorno do erro como texto puro
+    return new Response(
+      'ERRO DETALHADO: ' + JSON.stringify({
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        detalhes: error
+      }),
       { status: 500 }
-    )
+    );
   }
 } 
