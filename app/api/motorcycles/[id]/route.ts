@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { unlink } from 'fs/promises'
-import { join } from 'path'
 import { validateAndProcessImage } from '@/app/utils/imageValidation'
 import type { FileData } from '@/app/utils/imageValidation'
 
 interface ImageData {
-  url?: string;
-  base64?: string;
+  base64: string;
   name: string;
   type: string;
 }
@@ -36,17 +33,6 @@ export async function DELETE(
 
       return motorcycle
     })
-
-    // Deletar arquivos físicos após commit da transaction
-    for (const image of result.images) {
-      try {
-        const filepath = join(process.cwd(), 'public', image.url)
-        await unlink(filepath)
-      } catch (error) {
-        console.error('Erro ao deletar arquivo:', error)
-        // Não falhar se arquivo não puder ser deletado
-      }
-    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
