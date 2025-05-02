@@ -133,7 +133,15 @@ export async function GET(request: Request) {
       }
     })
 
-    console.log(`Encontradas ${motorcycles.length} motocicletas`)
+    // Tratamento para garantir que images sempre exista e só tenha imagens válidas
+    const motorcyclesSafe = motorcycles.map((moto) => ({
+      ...moto,
+      images: Array.isArray(moto.images)
+        ? moto.images.filter(img => img && typeof img.base64 === 'string' && img.base64.length > 0)
+        : []
+    }))
+
+    console.log(`Encontradas ${motorcyclesSafe.length} motocicletas`)
 
     const total = await prisma.motorcycle.count()
     const totalPages = Math.ceil(total / limit)
@@ -141,7 +149,7 @@ export async function GET(request: Request) {
     console.log('Informações de paginação:', { total, totalPages, currentPage: pageNumber })
 
     return NextResponse.json({
-      data: motorcycles,
+      data: motorcyclesSafe,
       pagination: {
         currentPage: pageNumber,
         totalPages,
