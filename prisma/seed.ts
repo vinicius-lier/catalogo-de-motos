@@ -22,8 +22,8 @@ async function main() {
         { name: 'Preto', hex: '#000000' }
       ],
       images: [
-        { url: 'https://example.com/cb500f-1.jpg' },
-        { url: 'https://example.com/cb500f-2.jpg' }
+        { base64: 'https://example.com/cb500f-1.jpg' },
+        { base64: 'https://example.com/cb500f-2.jpg' }
       ]
     },
     {
@@ -36,8 +36,8 @@ async function main() {
         { name: 'Cinza', hex: '#808080' }
       ],
       images: [
-        { url: 'https://example.com/mt07-1.jpg' },
-        { url: 'https://example.com/mt07-2.jpg' }
+        { base64: 'https://example.com/mt07-1.jpg' },
+        { base64: 'https://example.com/mt07-2.jpg' }
       ]
     }
   ]
