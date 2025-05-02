@@ -4,6 +4,13 @@ import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { validateAndProcessImage } from '@/app/utils/imageValidation'
 
+interface ImageData {
+  url?: string;
+  base64?: string;
+  name: string;
+  type: string;
+}
+
 export async function DELETE(
   request: Request,
   context: { params: { id: string } }
@@ -89,6 +96,19 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
+    // Verificar se a moto existe
+    const existingMotorcycle = await prisma.motorcycle.findUnique({
+      where: { id: context.params.id },
+      include: { images: true }
+    })
+
+    if (!existingMotorcycle) {
+      return NextResponse.json(
+        { error: 'Motocicleta não encontrada' },
+        { status: 404 }
+      )
+    }
+
     const data = await request.json()
     
     // Validar dados obrigatórios
@@ -127,20 +147,25 @@ export async function PUT(
       }
     }
 
+    // Separar imagens existentes e novas
+    const existingImageUrls = images
+      .filter((img: ImageData) => img.url && !img.base64)
+      .map((img: ImageData) => img.url)
+
+    const newImages = images
+      .filter((img: ImageData) => img.base64)
+
     // Processar novas imagens
     let newImageUrls: string[] = []
 
-    if (Array.isArray(images) && images.length > 0) {
+    if (newImages.length > 0) {
       const imageResults = await Promise.all(
-        images.map(async (image) => {
-          if (image.base64) {
-            const result = await validateAndProcessImage(image)
-            if (!result.success) {
-              throw new Error(result.error || 'Erro ao processar imagem')
-            }
-            return result
+        newImages.map(async (image) => {
+          const result = await validateAndProcessImage(image)
+          if (!result.success) {
+            throw new Error(result.error || 'Erro ao processar imagem')
           }
-          return { success: true, url: image.url }
+          return result
         })
       )
 
@@ -177,10 +202,16 @@ export async function PUT(
         })
       }
 
-      // Adicionar novas imagens
-      if (newImageUrls.length > 0) {
+      // Atualizar imagens
+      await tx.image.deleteMany({
+        where: { motorcycleId: moto.id }
+      })
+
+      // Adicionar imagens existentes e novas
+      const allImageUrls = [...existingImageUrls, ...newImageUrls]
+      if (allImageUrls.length > 0) {
         await tx.image.createMany({
-          data: newImageUrls.map(url => ({
+          data: allImageUrls.map(url => ({
             url,
             motorcycleId: moto.id
           }))
@@ -199,9 +230,14 @@ export async function PUT(
 
     return NextResponse.json({ data: motorcycle })
   } catch (error) {
-    console.error('Erro ao atualizar motocicleta:', error)
+    console.error('Erro detalhado ao atualizar motocicleta:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
     return NextResponse.json(
-      { error: 'Erro ao atualizar motocicleta' },
+      { error: 'Erro ao atualizar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
       { status: 500 }
     )
   }
