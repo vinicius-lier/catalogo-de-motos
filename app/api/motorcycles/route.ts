@@ -213,45 +213,31 @@ export async function POST(request: NextRequest) {
     const validatedData = validationResult.data
 
     // Processar imagens
-    console.log('Processando imagens...')
-    const processedImages = await Promise.all(
-      validatedData.images.map(async (image) => {
-        const result = await validateAndProcessImage(image)
-        if (!result.success) {
-          throw new Error(`Erro ao processar imagem ${image.name}: ${result.error}`)
-        }
-        return result
-      })
-    )
+    // Em vez de processar base64, apenas salve as URLs recebidas
+    const imageUrls = validatedData.images.map((img: any) => img.url).filter(Boolean)
 
     // Criar motocicleta no banco
-    console.log('Criando motocicleta no banco...')
-    const motorcycle = await prisma.motorcycle.create({
+    const moto = await prisma.motorcycle.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,
         price: validatedData.price,
         isSold: validatedData.isSold,
         colors: {
-          create: validatedData.colors.map((color) => ({
-            name: color.name,
-            hex: color.hex
-          }))
+          create: validatedData.colors
         },
         images: {
-          create: processedImages.map((result, index) => ({
-            url: result.url!
-          }))
+          create: imageUrls.map((url: string) => ({ url }))
         }
       },
       include: {
-        colors: true,
-        images: true
+        images: true,
+        colors: true
       }
     })
 
-    console.log('Motocicleta criada com sucesso:', motorcycle)
-    return NextResponse.json({ data: motorcycle })
+    console.log('Motocicleta criada com sucesso:', moto)
+    return NextResponse.json({ data: moto })
 
   } catch (error) {
     console.error('Erro detalhado ao criar motocicleta:', {
