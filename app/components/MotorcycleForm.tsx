@@ -115,7 +115,8 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
     e.preventDefault()
     console.log('=== Iniciando submissão do formulário ===')
 
-    if (!selectedFiles && existingImages.length === 0) {
+    // Verificar se é uma edição ou criação
+    if (!motorcycle && !selectedFiles && existingImages.length === 0) {
       console.error('Nenhuma imagem selecionada')
       alert('Por favor, selecione pelo menos uma imagem')
       return
