@@ -68,6 +68,19 @@ export default function Admin2Page() {
       
       const method = selectedMotorcycle ? 'PUT' : 'POST';
       
+      console.log('Enviando requisição:', {
+        url,
+        method,
+        data: {
+          ...formData,
+          images: formData.images.map(img => ({
+            base64: img.base64 ? img.base64.substring(0, 100) + '...' : 'url: ' + img.url,
+            name: img.name,
+            type: img.type
+          }))
+        }
+      });
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -79,14 +92,24 @@ export default function Admin2Page() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar moto');
+        console.error('Erro na resposta:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
+        throw new Error(data.error || `Erro ao salvar moto: ${response.status} ${response.statusText}`);
       }
 
+      console.log('Moto salva com sucesso:', data);
       await fetchMotorcycles();
       setIsFormOpen(false);
       setSelectedMotorcycle(undefined);
     } catch (error) {
-      console.error('Erro ao salvar moto:', error);
+      console.error('Erro ao salvar moto:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       alert(error instanceof Error ? error.message : 'Erro ao salvar moto. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);

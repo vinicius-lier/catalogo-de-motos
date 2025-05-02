@@ -138,7 +138,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
           }
           reader.onerror = (error) => {
             console.error('Erro ao converter imagem:', file.name, error)
-            reject(error)
+            reject(new Error(`Erro ao converter imagem ${file.name}: ${error}`))
           }
           reader.readAsDataURL(file)
         })
@@ -147,9 +147,23 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       const images = await Promise.all(imagePromises)
       console.log(`${images.length} imagens processadas com sucesso`)
 
+      // Validar dados do formulário
+      if (!name.trim()) {
+        throw new Error('O nome da moto é obrigatório')
+      }
+      if (!description.trim()) {
+        throw new Error('A descrição é obrigatória')
+      }
+      if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+        throw new Error('O preço deve ser um número maior que zero')
+      }
+      if (selectedColors.length === 0) {
+        throw new Error('Pelo menos uma cor deve ser adicionada')
+      }
+
       const formData: FormData = {
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
         price: Number(price),
         isSold,
         colors: selectedColors,
