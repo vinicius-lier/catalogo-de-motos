@@ -24,7 +24,7 @@ model Motorcycle {
 
 model Image {
   id           String     @id @default(uuid())
-  url          String     @db.Text
+  base64       String     @db.Text
   motorcycleId String
   motorcycle   Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
 

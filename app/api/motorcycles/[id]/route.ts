@@ -97,64 +97,23 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    // Verificar se a moto existe
-    const existingMotorcycle = await prisma.motorcycle.findUnique({
-      where: { id: context.params.id },
-      include: { images: true }
-    })
-
-    if (!existingMotorcycle) {
-      return NextResponse.json(
-        { error: 'Motocicleta não encontrada' },
-        { status: 404 }
-      )
-    }
-
     const data = await request.json()
-    console.log('Dados recebidos:', {
-      ...data,
-      images: data.images?.map((img: any) => ({
-        name: img.name,
-        type: img.type,
-        hasBase64: !!img.base64,
-        hasUrl: !!img.url
-      }))
-    })
-    
-    // Validar dados obrigatórios
     const { name, description, price, isSold, colors, images } = data
 
-    if (!name || !description || !price) {
+    // Validar dados
+    if (!name || !description || !price || !Array.isArray(colors) || !Array.isArray(images)) {
       return NextResponse.json(
-        { error: 'Dados obrigatórios faltando: nome, descrição e preço são necessários' },
+        { error: 'Dados inválidos' },
         { status: 400 }
       )
     }
 
-    // Validar preço
     const priceNumber = Number(price)
     if (isNaN(priceNumber) || priceNumber <= 0) {
       return NextResponse.json(
-        { error: 'Preço inválido: deve ser um número maior que zero' },
+        { error: 'Preço inválido' },
         { status: 400 }
       )
-    }
-
-    // Validar cores
-    if (!Array.isArray(colors)) {
-      return NextResponse.json(
-        { error: 'Formato de cores inválido: deve ser um array' },
-        { status: 400 }
-      )
-    }
-
-    for (const color of colors) {
-      if (!color.name || !color.hex || typeof color.name !== 'string' || typeof color.hex !== 'string') {
-        return NextResponse.json(
-          { error: 'Dados de cor inválidos: nome e hex são obrigatórios' },
-          { status: 400 }
-        )
-      }
     }
 
     // Validar imagens
@@ -164,10 +123,6 @@ export async function PUT(
         { status: 400 }
       )
     }
-
-    // Separar imagens existentes e novas
-    // Agora, todas as imagens vêm como URLs (Cloudinary), então basta coletar as URLs
-    const allImageUrls = images.map((img: ImageData) => img.url).filter(Boolean)
 
     // Atualizar moto no banco com transaction
     try {
@@ -203,11 +158,11 @@ export async function PUT(
           where: { motorcycleId: moto.id }
         })
 
-        // Adicionar imagens (apenas URLs)
-        if (allImageUrls.length > 0) {
+        // Adicionar imagens (base64)
+        if (images.length > 0) {
           await tx.image.createMany({
-            data: allImageUrls.filter((url): url is string => !!url).map(url => ({
-              url,
+            data: images.map(img => ({
+              base64: img.base64,
               motorcycleId: moto.id
             }))
           })
@@ -225,22 +180,25 @@ export async function PUT(
 
       return NextResponse.json({ data: motorcycle })
     } catch (error) {
-      console.error('Erro na transaction:', error)
+      console.error('Erro ao atualizar moto:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return NextResponse.json(
-        { error: 'Erro ao atualizar motocicleta no banco de dados: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
+        { error: 'Erro ao atualizar moto. Por favor, tente novamente.' },
         { status: 500 }
       )
     }
   } catch (error) {
-    // Força o retorno do erro como texto puro
-    return new Response(
-      'ERRO DETALHADO: ' + JSON.stringify({
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        detalhes: error
-      }),
+    console.error('Erro geral:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return NextResponse.json(
+      { error: 'Erro interno do servidor. Por favor, tente novamente.' },
       { status: 500 }
-    );
+    )
   }
 } 

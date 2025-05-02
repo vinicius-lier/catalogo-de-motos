@@ -212,50 +212,71 @@ export async function POST(request: NextRequest) {
 
     const validatedData = validationResult.data
 
-    // Processar imagens
-    // Em vez de processar base64, apenas salve as URLs recebidas
-    const imageUrls = validatedData.images.map((img: any) => img.url).filter(Boolean)
+    // Criar moto com transaction
+    try {
+      const motorcycle = await prisma.$transaction(async (tx) => {
+        // Criar moto
+        const moto = await tx.motorcycle.create({
+          data: {
+            name: validatedData.name,
+            description: validatedData.description,
+            price: validatedData.price,
+            isSold: validatedData.isSold
+          }
+        })
 
-    // Criar motocicleta no banco
-    const moto = await prisma.motorcycle.create({
-      data: {
-        name: validatedData.name,
-        description: validatedData.description,
-        price: validatedData.price,
-        isSold: validatedData.isSold,
-        colors: {
-          create: validatedData.colors
-        },
-        images: {
-          create: imageUrls.map((url: string) => ({ url }))
+        // Adicionar cores
+        if (validatedData.colors.length > 0) {
+          await tx.color.createMany({
+            data: validatedData.colors.map(color => ({
+              name: color.name,
+              hex: color.hex,
+              motorcycleId: moto.id
+            }))
+          })
         }
-      },
-      include: {
-        images: true,
-        colors: true
-      }
-    })
 
-    console.log('Motocicleta criada com sucesso:', moto)
-    return NextResponse.json({ data: moto })
+        // Adicionar imagens (base64)
+        if (validatedData.images.length > 0) {
+          await tx.image.createMany({
+            data: validatedData.images.map(img => ({
+              base64: img.base64,
+              motorcycleId: moto.id
+            }))
+          })
+        }
 
+        // Retornar moto com relacionamentos
+        return tx.motorcycle.findUnique({
+          where: { id: moto.id },
+          include: {
+            images: true,
+            colors: true
+          }
+        })
+      })
+
+      return NextResponse.json({ data: motorcycle })
+    } catch (error) {
+      console.error('Erro ao criar moto:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      return NextResponse.json(
+        { error: 'Erro ao criar moto. Por favor, tente novamente.' },
+        { status: 500 }
+      )
+    }
   } catch (error) {
-    console.error('Erro detalhado ao criar motocicleta:', {
+    console.error('Erro geral:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Erro desconhecido',
       stack: error instanceof Error ? error.stack : undefined
     })
-    
     return NextResponse.json(
-      { error: 'Erro ao criar motocicleta: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
+      { error: 'Erro interno do servidor. Por favor, tente novamente.' },
       { status: 500 }
     )
-  } finally {
-    try {
-      await prisma.$disconnect()
-      console.log('Desconectado do banco com sucesso')
-    } catch (disconnectError) {
-      console.error('Erro ao desconectar do banco:', disconnectError)
-    }
   }
 } 
