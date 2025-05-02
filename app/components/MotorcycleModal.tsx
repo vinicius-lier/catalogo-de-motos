@@ -18,7 +18,7 @@ export function MotorcycleModal({ motorcycle, isOpen, onClose }: MotorcycleModal
           <div className="relative aspect-square">
             {motorcycle.images[0] && (
               <Image
-                src={motorcycle.images[0].url}
+                src={motorcycle.images[0].base64}
                 alt={motorcycle.name}
                 fill
                 className="object-cover rounded-lg"
