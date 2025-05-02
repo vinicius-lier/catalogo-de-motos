@@ -14,7 +14,8 @@ type MotorcycleWithRelations = Motorcycle & {
 };
 
 interface FormImage {
-  base64: string;
+  base64?: string;
+  url?: string;
   name: string;
   type: string;
 }
