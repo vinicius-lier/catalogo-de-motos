@@ -12,7 +12,7 @@ interface Color {
 
 interface Image {
   id: string
-  url: string
+  base64: string
   motorcycleId: string
 }
 
