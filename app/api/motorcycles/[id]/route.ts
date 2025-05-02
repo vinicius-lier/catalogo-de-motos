@@ -160,24 +160,32 @@ export async function PUT(
     let newImageUrls: string[] = []
 
     if (newImages.length > 0) {
-      const imageResults = await Promise.all(
-        newImages.map(async (image: ImageData) => {
-          const fileData: FileData = {
-            base64: image.base64!,
-            type: image.type,
-            name: image.name
-          }
-          const result = await validateAndProcessImage(fileData)
-          if (!result.success) {
-            throw new Error(result.error || 'Erro ao processar imagem')
-          }
-          return result
-        })
-      )
+      try {
+        const imageResults = await Promise.all(
+          newImages.map(async (image: ImageData) => {
+            if (!image.base64) {
+              throw new Error('Base64 não encontrado para imagem')
+            }
+            const fileData: FileData = {
+              base64: image.base64,
+              type: image.type,
+              name: image.name
+            }
+            const result = await validateAndProcessImage(fileData)
+            if (!result.success) {
+              throw new Error(result.error || 'Erro ao processar imagem')
+            }
+            return result
+          })
+        )
 
-      newImageUrls = imageResults
-        .filter((result): result is { success: true; url: string } => result.success && !!result.url)
-        .map(result => result.url!)
+        newImageUrls = imageResults
+          .filter((result): result is { success: true; url: string } => result.success && !!result.url)
+          .map(result => result.url!)
+      } catch (error) {
+        console.error('Erro ao processar novas imagens:', error)
+        throw new Error('Erro ao processar imagens: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
+      }
     }
 
     // Atualizar moto no banco com transaction
