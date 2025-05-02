@@ -133,6 +133,8 @@ export async function GET(request: Request) {
       }
     })
 
+    console.log('Motorcycles do banco:', JSON.stringify(motorcycles, null, 2))
+
     // Tratamento para garantir que images sempre exista e só tenha imagens válidas
     const motorcyclesSafe = motorcycles.map((moto) => ({
       ...moto,
