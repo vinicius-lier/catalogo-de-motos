@@ -18,7 +18,8 @@ interface FormColor {
 }
 
 interface FormImage {
-  base64: string;
+  base64?: string;
+  url?: string;
   name: string;
   type: string;
 }
@@ -153,7 +154,7 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
         colors: selectedColors,
         images: [
           ...existingImages.map(img => ({
-            base64: img.url,
+            url: img.url,
             name: `existing-${img.url.split('/').pop()}`,
             type: 'image/webp'
           })),
@@ -168,7 +169,9 @@ export function MotorcycleForm({ motorcycle, onSubmit, onCancel, isLoading }: Mo
       console.log('Dados a serem enviados:', {
         ...formData,
         images: formData.images.map(img => ({
-          base64: img.base64.substring(0, 100) + '...' // Log parcial para não sobrecarregar o console
+          base64: img.base64 ? img.base64.substring(0, 100) + '...' : 'url: ' + img.url,
+          name: img.name,
+          type: img.type
         }))
       })
 
