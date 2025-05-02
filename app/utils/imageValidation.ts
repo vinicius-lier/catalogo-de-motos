@@ -1,7 +1,6 @@
 import sharp from 'sharp'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_WIDTH = 1200
 const MAX_HEIGHT = 800
 const OUTPUT_QUALITY = 80
@@ -20,17 +19,6 @@ export async function validateAndProcessImage(fileData: FileData): Promise<{ suc
       tamanhoBase64: fileData.base64.length
     })
 
-    // Validar tipo
-    console.log('Validando tipo do arquivo...')
-    if (!ALLOWED_FILE_TYPES.includes(fileData.type)) {
-      console.error('Tipo de arquivo não permitido:', {
-        tipoRecebido: fileData.type,
-        tiposPermitidos: ALLOWED_FILE_TYPES
-      })
-      return { success: false, error: 'Tipo de arquivo não permitido. Use JPEG, PNG ou WebP' }
-    }
-    console.log('Tipo de arquivo válido')
-
     // Decodificar base64
     console.log('Decodificando base64...')
     const base64Data = fileData.base64.replace(/^data:image\/\w+;base64,/, '')
@@ -44,7 +32,7 @@ export async function validateAndProcessImage(fileData: FileData): Promise<{ suc
         tamanhoRecebido: `${(buffer.length / (1024 * 1024)).toFixed(2)}MB`,
         tamanhoMaximo: `${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(2)}MB`
       })
-      return { success: false, error: 'Imagem muito grande (máximo 5MB)' }
+      return { success: false, error: 'Imagem muito grande (máximo 10MB)' }
     }
     console.log('Tamanho do arquivo válido')
 
@@ -61,6 +49,12 @@ export async function validateAndProcessImage(fileData: FileData): Promise<{ suc
       profundidadeDeBits: metadata.depth,
       densidade: metadata.density
     })
+
+    // Verificar se é uma imagem válida
+    if (!metadata.format) {
+      console.error('Formato de imagem inválido')
+      return { success: false, error: 'Formato de imagem inválido' }
+    }
 
     // Sempre redimensionar para o tamanho máximo permitido
     console.log('Redimensionando imagem...')
@@ -96,9 +90,20 @@ export async function validateAndProcessImage(fileData: FileData): Promise<{ suc
       stack: error instanceof Error ? error.stack : undefined,
       detalhes: error instanceof Error ? (error as any).details : undefined
     })
+
+    // Mensagens de erro mais específicas
+    if (error instanceof Error) {
+      if (error.message.includes('Input buffer contains unsupported image format')) {
+        return { success: false, error: 'Formato de imagem não suportado. Por favor, use uma imagem válida.' }
+      }
+      if (error.message.includes('Input buffer is empty')) {
+        return { success: false, error: 'A imagem está vazia ou corrompida.' }
+      }
+    }
+
     return { 
       success: false, 
-      error: 'Erro ao processar imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido') 
+      error: 'Erro ao processar imagem. Por favor, tente novamente com uma imagem válida.' 
     }
   }
 } 
